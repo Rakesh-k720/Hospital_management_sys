@@ -8,6 +8,7 @@ router.use(protect);
 router.use(authorize('patient'));
 
 router.get('/dashboard', patientController.getDashboardStats);
+router.get('/booking-meta', patientController.getBookingMeta);
 router.post('/appointments', patientController.bookAppointment);
 router.get('/appointments', patientController.getMyAppointments);
 router.get('/bills', patientController.getMyBills);

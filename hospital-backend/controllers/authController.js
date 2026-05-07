@@ -1,12 +1,15 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
+const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
 
 // Register User
 exports.register = async (req, res) => {
+    const connection = await db.getConnection();
     try {
         const { name, email, phone, password, role } = req.body;
+        const selectedRole = role || 'patient';
 
         // Check if user exists
         const userExists = await User.findByEmail(email);
@@ -14,23 +17,41 @@ exports.register = async (req, res) => {
             return sendResponse(res, 400, 'User already exists');
         }
 
+        await connection.beginTransaction();
+
         // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Create user
-        const userId = await User.create({
-            name,
-            email,
-            phone,
-            password: hashedPassword,
-            role: role || 'patient'
-        });
+        const [userResult] = await connection.execute(
+            'INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)',
+            [name, email, phone, hashedPassword, selectedRole]
+        );
+        const userId = userResult.insertId;
+
+        // Ensure role-specific profile exists so role dashboards do not fail.
+        if (selectedRole === 'patient') {
+            await connection.execute(
+                'INSERT INTO patients (user_id, age, gender, blood_group, address) VALUES (?, ?, ?, ?, ?)',
+                [userId, 18, 'other', null, null]
+            );
+        } else if (selectedRole === 'doctor') {
+            await connection.execute(
+                'INSERT INTO doctors (user_id, department_id, specialization, experience_years, room_number, consultation_fee) VALUES (?, ?, ?, ?, ?, ?)',
+                [userId, 1, 'General Physician', 0, null, 500]
+            );
+        }
+
+        await connection.commit();
 
         sendResponse(res, 201, 'User registered successfully', { userId });
     } catch (err) {
+        await connection.rollback();
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error');
+    } finally {
+        connection.release();
     }
 };
 

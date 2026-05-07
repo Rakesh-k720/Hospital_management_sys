@@ -11,11 +11,7 @@ const PatientPrescriptions = () => {
     useEffect(() => {
         const fetchPrescriptions = async () => {
             try {
-                // We'll use the patient dashboard stats endpoint or create a new one
-                // For now, let's assume we have an endpoint /patient/prescriptions
-                // Since I haven't created it yet, I'll add the controller first if needed, 
-                // but let's just make the UI look good with mock data if the endpoint is missing
-                const response = await API.get('/patient/appointments'); // Fetching appointments to get related prescriptions
+                const response = await API.get('/patient/prescriptions');
                 setPrescriptions(response.data.data);
                 setLoading(false);
             } catch (err) {
@@ -61,33 +57,28 @@ const PatientPrescriptions = () => {
                             <div className="mb-4">
                                 <h4 className="text-xs font-bold text-secondary-400 uppercase mb-2 tracking-widest">Doctor Notes</h4>
                                 <p className="text-sm text-secondary-700 italic">
-                                    "{p.notes || 'Please follow the dosage strictly and stay hydrated.'}"
+                                    "{p.notes || 'No notes provided.'}"
                                 </p>
                             </div>
                             <div className="space-y-3">
                                 <h4 className="text-xs font-bold text-secondary-400 uppercase mb-2 tracking-widest">Medications</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {/* Sub-items for medicines */}
-                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-primary-50/50 border border-primary-100">
-                                        <div className="p-1.5 bg-primary-100 rounded-lg text-primary-700 mt-0.5">
-                                            <Pill size={14} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-secondary-900">Amlodipine 5mg</p>
-                                            <p className="text-[10px] text-primary-600 font-bold uppercase">1 - 0 - 0 • 30 Days</p>
-                                            <p className="text-[10px] text-secondary-500 mt-0.5 italic">After breakfast</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-primary-50/50 border border-primary-100">
-                                        <div className="p-1.5 bg-primary-100 rounded-lg text-primary-700 mt-0.5">
-                                            <Pill size={14} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-secondary-900">Atorvastatin 10mg</p>
-                                            <p className="text-[10px] text-primary-600 font-bold uppercase">0 - 0 - 1 • 60 Days</p>
-                                            <p className="text-[10px] text-secondary-500 mt-0.5 italic">Before bed</p>
-                                        </div>
-                                    </div>
+                                    {(p.medicines || []).length === 0 ? (
+                                        <p className="text-sm text-secondary-500">No medicines listed.</p>
+                                    ) : (
+                                        (p.medicines || []).map((m) => (
+                                            <div key={m.id} className="flex items-start gap-3 p-3 rounded-xl bg-primary-50/50 border border-primary-100">
+                                                <div className="p-1.5 bg-primary-100 rounded-lg text-primary-700 mt-0.5">
+                                                    <Pill size={14} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-secondary-900">{m.medicine_name}</p>
+                                                    <p className="text-[10px] text-primary-600 font-bold uppercase">{m.dosage} • {m.duration}</p>
+                                                    <p className="text-[10px] text-secondary-500 mt-0.5 italic">{m.instructions || 'As advised'}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         </CardContent>

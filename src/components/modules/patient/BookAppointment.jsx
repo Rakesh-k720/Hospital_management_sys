@@ -1,13 +1,88 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../ui/Card';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Card, CardContent } from '../../ui/Card';
 import Button from '../../ui/Button';
-import Input from '../../ui/Input';
-import { Calendar, ChevronRight, Check } from 'lucide-react';
+import { ChevronRight, Check } from 'lucide-react';
+import API from '../../../services/api';
 
 const BookAppointment = () => {
     const [step, setStep] = useState(1);
-    const [selectedDept, setSelectedDept] = useState('');
-    const [selectedDoctor, setSelectedDoctor] = useState('');
+    const [departments, setDepartments] = useState([]);
+    const [doctors, setDoctors] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+    const [successData, setSuccessData] = useState(null);
+    const [formData, setFormData] = useState({
+        department_id: '',
+        doctor_id: '',
+        appointment_date: '',
+        appointment_time: '',
+        priority: 'normal'
+    });
+
+    useEffect(() => {
+        const fetchMeta = async () => {
+            try {
+                const response = await API.get('/patient/booking-meta');
+                setDepartments(response.data.data.departments || []);
+                setDoctors(response.data.data.doctors || []);
+            } catch (err) {
+                setError(err.response?.data?.message || 'Failed to load booking data.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchMeta();
+    }, []);
+
+    const doctorsForDepartment = useMemo(
+        () => doctors.filter((doc) => String(doc.department_id) === String(formData.department_id)),
+        [doctors, formData.department_id]
+    );
+
+    const handleNext = () => {
+        if (!formData.department_id || !formData.doctor_id) {
+            setError('Please select both department and doctor.');
+            return;
+        }
+        setError('');
+        setStep(2);
+    };
+
+    const handleConfirm = () => {
+        if (!formData.appointment_date || !formData.appointment_time) {
+            setError('Please select date and time.');
+            return;
+        }
+        setError('');
+        setStep(3);
+    };
+
+    const handleSubmit = async () => {
+        try {
+            setSubmitting(true);
+            setError('');
+            const response = await API.post('/patient/appointments', formData);
+            setSuccessData(response.data.data);
+            setStep(4);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to book appointment.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            department_id: '',
+            doctor_id: '',
+            appointment_date: '',
+            appointment_time: '',
+            priority: 'normal'
+        });
+        setSuccessData(null);
+        setStep(1);
+    };
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -21,7 +96,17 @@ const BookAppointment = () => {
             </div>
 
             <Card>
-                {step === 1 && (
+                {loading && (
+                    <CardContent className="p-8 text-center text-secondary-500">Loading booking options...</CardContent>
+                )}
+
+                {!loading && error && (
+                    <CardContent className="p-4">
+                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+                    </CardContent>
+                )}
+
+                {!loading && step === 1 && (
                     <CardContent className="p-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center mb-8">
                             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">Step 1</p>
@@ -33,30 +118,38 @@ const BookAppointment = () => {
                                 <label className="text-sm font-medium text-secondary-700">Medical Department</label>
                                 <select
                                     className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                                    onChange={(e) => setSelectedDept(e.target.value)}
+                                    value={formData.department_id}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, department_id: e.target.value, doctor_id: '' }))}
                                 >
                                     <option value="">Select Department</option>
-                                    <option value="Cardiology">Cardiology</option>
-                                    <option value="Neurology">Neurology</option>
-                                    <option value="Pediatrics">Pediatrics</option>
-                                    <option value="Orthopedics">Orthopedics</option>
+                                    {departments.map((dept) => (
+                                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                    ))}
                                 </select>
                             </div>
 
                             <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-secondary-700">Specialist Doctor</label>
-                                <select className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none">
+                                <select
+                                    className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                    value={formData.doctor_id}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, doctor_id: e.target.value }))}
+                                    disabled={!formData.department_id}
+                                >
                                     <option value="">Select Doctor</option>
-                                    <option value="1">Dr. Sarah Connor (Available Today)</option>
-                                    <option value="2">Dr. James Smith (Available Tomorrow)</option>
+                                    {doctorsForDepartment.map((doc) => (
+                                        <option key={doc.id} value={doc.id}>
+                                            {doc.name} ({doc.specialization})
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
                             <div className="pt-4">
                                 <Button
                                     className="w-full py-6 text-base flex items-center justify-center gap-2 group"
-                                    onClick={() => setStep(2)}
-                                    disabled={!selectedDept}
+                                    onClick={handleNext}
+                                    disabled={!formData.department_id || !formData.doctor_id}
                                 >
                                     Next Step
                                     <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -66,61 +159,82 @@ const BookAppointment = () => {
                     </CardContent>
                 )}
 
-                {step === 2 && (
+                {!loading && step === 2 && (
                     <CardContent className="p-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center mb-8">
                             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">Step 2</p>
                             <h3 className="text-xl font-bold text-secondary-900">Choose Date & Time</h3>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <p className="text-sm font-bold text-secondary-900 mb-2">Select Date</p>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {Array.from({ length: 12 }, (_, i) => (
-                                        <button
-                                            key={i}
-                                            className={`p-2 h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${i === 2 ? 'bg-primary-600 border-primary-600 text-white shadow-soft ring-2 ring-primary-100' : 'bg-white border-slate-100 text-secondary-600 hover:border-primary-200'
-                                                }`}
-                                        >
-                                            <span className="text-[10px] uppercase font-bold opacity-70">FEB</span>
-                                            <span className="text-sm font-bold">{14 + i}</span>
-                                        </button>
-                                    ))}
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-secondary-700">Appointment Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.appointment_date}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, appointment_date: e.target.value }))}
+                                    className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                />
                             </div>
 
-                            <div className="space-y-4">
-                                <p className="text-sm font-bold text-secondary-900 mb-2">Available Slots</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {['09:00 AM', '10:30 AM', '12:00 PM', '02:30 PM', '04:00 PM'].map((slot, i) => (
-                                        <button
-                                            key={i}
-                                            className={`p-3 rounded-xl border text-sm font-medium transition-all ${i === 1 ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' : 'bg-white border-slate-100 text-secondary-600 hover:border-slate-200'
-                                                }`}
-                                        >
-                                            {slot}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-secondary-700">Appointment Time</label>
+                                <input
+                                    type="time"
+                                    value={formData.appointment_time}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, appointment_time: e.target.value }))}
+                                    className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                />
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-sm font-medium text-secondary-700">Priority</label>
+                                <select
+                                    value={formData.priority}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
+                                    className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                                >
+                                    <option value="normal">Normal</option>
+                                    <option value="emergency">Emergency</option>
+                                </select>
                             </div>
                         </div>
 
                         <div className="flex gap-4 pt-6">
                             <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>Back</Button>
-                            <Button className="flex-[2]" onClick={() => setStep(3)}>Confirm Selection</Button>
+                            <Button className="flex-[2]" onClick={handleConfirm}>Confirm Selection</Button>
                         </div>
                     </CardContent>
                 )}
 
-                {step === 3 && (
+                {!loading && step === 3 && (
+                    <CardContent className="p-8 text-center space-y-6">
+                        <h3 className="text-xl font-bold text-secondary-900">Confirm Appointment</h3>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left text-sm space-y-2">
+                            <p><span className="font-semibold">Department:</span> {departments.find((d) => String(d.id) === String(formData.department_id))?.name}</p>
+                            <p><span className="font-semibold">Doctor:</span> {doctors.find((d) => String(d.id) === String(formData.doctor_id))?.name}</p>
+                            <p><span className="font-semibold">Date:</span> {formData.appointment_date}</p>
+                            <p><span className="font-semibold">Time:</span> {formData.appointment_time}</p>
+                            <p><span className="font-semibold">Priority:</span> {formData.priority}</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>Back</Button>
+                            <Button className="flex-1" onClick={handleSubmit} disabled={submitting}>
+                                {submitting ? 'Booking...' : 'Book Appointment'}
+                            </Button>
+                        </div>
+                    </CardContent>
+                )}
+
+                {!loading && step === 4 && (
                     <CardContent className="p-12 text-center animate-in zoom-in-95 duration-500">
                         <div className="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-green-100">
                             <Check size={40} strokeWidth={3} />
                         </div>
                         <h3 className="text-2xl font-bold text-secondary-900 mb-2">Appointment Scheduled!</h3>
                         <p className="text-secondary-500 mb-8 max-w-sm mx-auto">
-                            Your appointment with <span className="text-secondary-900 font-bold">Dr. Sarah Connor</span> is confirmed for <span className="text-secondary-900 font-bold">Feb 16 at 10:30 AM</span>.
+                            Appointment booked successfully for <span className="text-secondary-900 font-bold">{successData?.appointmentDate}</span>.
                         </p>
 
                         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-left mb-8">
@@ -129,17 +243,17 @@ const BookAppointment = () => {
                                 <span className="text-xs font-bold text-primary-600">CONFIRMED</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <p className="text-3xl font-bold text-secondary-900 font-mono">APP-2402-01</p>
+                                <p className="text-3xl font-bold text-secondary-900 font-mono">{successData?.tokenNumber || '-'}</p>
                                 <div className="text-right">
-                                    <p className="text-xs font-bold text-secondary-900">Room 304</p>
-                                    <p className="text-[10px] text-secondary-500 uppercase">South Wing</p>
+                                    <p className="text-xs font-bold text-secondary-900">Queue Position</p>
+                                    <p className="text-[10px] text-secondary-500 uppercase">{successData?.queuePosition || '-'}</p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="flex gap-3">
-                            <Button variant="outline" className="flex-1">Add to Calendar</Button>
-                            <Button className="flex-1" onClick={() => setStep(1)}>Go to Portal</Button>
+                            <Button variant="outline" className="flex-1" onClick={resetForm}>Book Another</Button>
+                            <Button className="flex-1" onClick={resetForm}>Go to Portal</Button>
                         </div>
                     </CardContent>
                 )}

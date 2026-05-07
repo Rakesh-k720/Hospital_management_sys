@@ -39,6 +39,7 @@ exports.bookAppointment = async (req, res) => {
         const { doctor_id, department_id, appointment_date, appointment_time, priority } = req.body;
         const userId = req.user.id;
         const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
         const patientId = patient[0].id;
 
         // 1. Generate Token Number (e.g., T-101, T-102...)
@@ -83,6 +84,7 @@ exports.getMyAppointments = async (req, res) => {
     try {
         const userId = req.user.id;
         const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
 
         const [rows] = await db.execute(`
       SELECT a.*, d.specialization, u.name as doctor_name 
@@ -105,6 +107,7 @@ exports.getMyBills = async (req, res) => {
     try {
         const userId = req.user.id;
         const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
 
         const [rows] = await db.execute('SELECT * FROM bills WHERE patient_id = ? ORDER BY bill_date DESC', [patient[0].id]);
         sendResponse(res, 200, 'Bills fetched', rows);
@@ -119,6 +122,7 @@ exports.getMyPrescriptions = async (req, res) => {
     try {
         const userId = req.user.id;
         const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
 
         const [rows] = await db.execute(`
             SELECT p.*, u.name as doctor_name, d.specialization
@@ -136,6 +140,24 @@ exports.getMyPrescriptions = async (req, res) => {
         }
 
         sendResponse(res, 200, 'Prescriptions fetched', rows);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.getBookingMeta = async (req, res) => {
+    try {
+        const [departments] = await db.execute('SELECT id, name FROM departments ORDER BY name');
+        const [doctors] = await db.execute(`
+            SELECT d.id, d.department_id, d.specialization, d.consultation_fee, u.name
+            FROM doctors d
+            JOIN users u ON d.user_id = u.id
+            WHERE d.status = 'active'
+            ORDER BY u.name
+        `);
+
+        sendResponse(res, 200, 'Booking metadata fetched', { departments, doctors });
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error');

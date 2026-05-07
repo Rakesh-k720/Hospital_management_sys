@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import Badge from '../../ui/Badge';
-import { stats } from '../../../data/mock';
 import {
     Calendar, Ticket, CreditCard, ClipboardCheck, ArrowRight,
     Download, Heart, Activity, Clock, ShieldAlert,
@@ -9,8 +8,43 @@ import {
 } from 'lucide-react';
 import Button from '../../ui/Button';
 import { Link } from 'react-router-dom';
+import API from '../../../services/api';
 
 const PatientHome = () => {
+    const [dashboard, setDashboard] = useState(null);
+    const [appointments, setAppointments] = useState([]);
+    const [bills, setBills] = useState([]);
+    const [reports, setReports] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [dashRes, apptRes, billRes, reportRes] = await Promise.all([
+                    API.get('/patient/dashboard'),
+                    API.get('/patient/appointments'),
+                    API.get('/patient/bills'),
+                    API.get('/lab/my-reports')
+                ]);
+                setDashboard(dashRes.data.data);
+                setAppointments(apptRes.data.data || []);
+                setBills(billRes.data.data || []);
+                setReports(reportRes.data.data || []);
+            } catch (err) {
+                console.error('Error loading patient dashboard:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const billingSummary = useMemo(() => {
+        const pending = bills.filter((b) => b.payment_status !== 'paid');
+        const pendingAmount = pending.reduce((sum, b) => sum + Number(b.total_amount || 0), 0);
+        return { pendingCount: pending.length, pendingAmount };
+    }, [bills]);
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -37,10 +71,10 @@ const PatientHome = () => {
             {/* health Vitials Brief */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Blood Group', value: 'B+ Positive', icon: Heart, color: 'red' },
-                    { label: 'Height / Weight', value: '175cm / 72kg', icon: Activity, color: 'primary' },
-                    { label: 'Next Appointment', value: 'Tomorrow 10 AM', icon: Clock, color: 'amber' },
-                    { label: 'Insurance Status', value: 'Active / Premium', icon: ShieldAlert, color: 'green' },
+                    { label: 'Upcoming Appointments', value: loading ? '-' : (dashboard?.upcomingAppointments ?? 0), icon: Calendar, color: 'primary' },
+                    { label: 'Total Visits', value: loading ? '-' : (dashboard?.totalVisits ?? 0), icon: Activity, color: 'amber' },
+                    { label: 'Pending Bills', value: loading ? '-' : (dashboard?.pendingBills ?? 0), icon: CreditCard, color: 'red' },
+                    { label: 'Reports Available', value: loading ? '-' : reports.length, icon: ClipboardCheck, color: 'green' },
                 ].map((item) => (
                     <Card key={item.label} className="border-none shadow-premium bg-white">
                         <CardContent className="p-5 flex items-center gap-4">
@@ -66,32 +100,32 @@ const PatientHome = () => {
                         </CardHeader>
                         <CardContent className="p-0">
                             <div className="divide-y divide-slate-100">
-                                {[
-                                    { doctor: 'Dr. Sarah Connor', specialty: 'Cardiology', date: 'Tomorrow', time: '10:00 AM', status: 'Confirmed', room: 'Room 204 | 2nd Floor' },
-                                    { doctor: 'Dr. James Smith', specialty: 'Neurology', date: 'Feb 20', time: '02:30 PM', status: 'Pending', room: 'OPD Complex | Ground Floor' },
-                                ].map((appt, i) => (
-                                    <div key={i} className="p-5 hover:bg-slate-50 transition-all group">
+                                {(appointments.slice(0, 5)).map((appt) => (
+                                    <div key={appt.id} className="p-5 hover:bg-slate-50 transition-all group">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
                                                 <div className="bg-primary-50 p-3 rounded-2xl text-primary-600 group-hover:bg-white transition-colors shadow-sm">
                                                     <Calendar size={20} />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-secondary-900">{appt.doctor}</p>
-                                                    <p className="text-xs text-secondary-500 mb-1">{appt.specialty}</p>
+                                                    <p className="text-sm font-bold text-secondary-900">{appt.doctor_name}</p>
+                                                    <p className="text-xs text-secondary-500 mb-1">{appt.specialization}</p>
                                                     <div className="flex items-center gap-1.5 text-[10px] text-secondary-400 font-medium">
-                                                        <MapPin size={10} /> {appt.room}
+                                                        <MapPin size={10} /> OPD Department
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-sm font-bold text-secondary-900">{appt.date}</p>
-                                                <p className="text-[10px] text-secondary-400 font-bold uppercase">{appt.time}</p>
-                                                <Badge variant={appt.status === 'Confirmed' ? 'success' : 'warning'} className="mt-2">{appt.status}</Badge>
+                                                <p className="text-sm font-bold text-secondary-900">{new Date(appt.appointment_date).toLocaleDateString()}</p>
+                                                <p className="text-[10px] text-secondary-400 font-bold uppercase">{appt.appointment_time}</p>
+                                                <Badge variant={appt.status === 'completed' ? 'success' : 'warning'} className="mt-2">{appt.status}</Badge>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
+                                {!loading && appointments.length === 0 && (
+                                    <div className="p-5 text-sm text-secondary-500">No appointments found.</div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -102,18 +136,15 @@ const PatientHome = () => {
                             <CardTitle className="text-lg">Lab Reports & Downloads</CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {[
-                                { test: 'Full Body Checkup', date: 'Feb 10, 2024', size: '1.2 MB' },
-                                { test: 'Blood Glucose History', date: 'Jan 28, 2024', size: '450 KB' },
-                            ].map((report, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-primary-100 hover:bg-primary-50/10 transition-all cursor-pointer">
+                            {(reports.slice(0, 4)).map((report) => (
+                                <div key={report.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 hover:border-primary-100 hover:bg-primary-50/10 transition-all cursor-pointer">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-slate-50 p-2.5 rounded-xl text-secondary-500">
                                             <ClipboardCheck size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-secondary-900">{report.test}</p>
-                                            <p className="text-[10px] text-secondary-400 font-bold">{report.date} • {report.size}</p>
+                                            <p className="text-sm font-bold text-secondary-900">{report.test_name}</p>
+                                            <p className="text-[10px] text-secondary-400 font-bold">{new Date(report.created_at).toLocaleDateString()}</p>
                                         </div>
                                     </div>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-primary-600 hover:bg-primary-50">
@@ -121,6 +152,7 @@ const PatientHome = () => {
                                     </Button>
                                 </div>
                             ))}
+                            {!loading && reports.length === 0 && <p className="text-sm text-secondary-500">No reports available.</p>}
                         </CardContent>
                     </Card>
                 </div>
@@ -133,15 +165,15 @@ const PatientHome = () => {
                         </div>
                         <CardContent className="p-6 relative">
                             <p className="text-xs font-bold text-primary-100 uppercase tracking-widest mb-1">Billing Summary</p>
-                            <h3 className="text-3xl font-bold font-['Outfit'] mb-6">$120.40</h3>
+                            <h3 className="text-3xl font-bold font-['Outfit'] mb-6">Rs. {billingSummary.pendingAmount.toFixed(2)}</h3>
                             <div className="space-y-3">
                                 <div className="flex justify-between text-xs pb-3 border-b border-white/20">
                                     <span className="text-primary-100">Pending Payments</span>
-                                    <span className="font-bold">01 Invoice</span>
+                                    <span className="font-bold">{billingSummary.pendingCount} Invoice(s)</span>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-primary-100">Last Payment</span>
-                                    <span className="font-bold">Feb 12, 2024</span>
+                                    <span className="font-bold">{bills[0] ? new Date(bills[0].bill_date).toLocaleDateString() : 'N/A'}</span>
                                 </div>
                             </div>
                             <Button className="w-full mt-6 bg-white text-primary-600 hover:bg-primary-50 font-bold py-2.5 text-xs shadow-soft rounded-xl">
