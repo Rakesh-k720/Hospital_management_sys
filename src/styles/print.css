@@ -1,0 +1,18 @@
+@media print {
+    aside,
+    header,
+    button,
+    .no-print,
+    nav {
+        display: none !important;
+    }
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+    }
+    .print-area {
+        box-shadow: none !important;
+        border: none !important;
+    }
+}

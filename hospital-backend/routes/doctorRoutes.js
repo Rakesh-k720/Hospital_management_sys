@@ -11,5 +11,8 @@ router.get('/dashboard', doctorController.getDashboardStats);
 router.get('/appointments', doctorController.getAppointments);
 router.post('/prescription', doctorController.createPrescription);
 router.post('/lab-request', doctorController.requestLabTest);
+router.get('/patients', doctorController.getMyPatients);
+router.get('/ipd', doctorController.getDoctorAdmissions);
+router.get('/lab-requests', doctorController.getDoctorLabRequests);
 
 module.exports = router;

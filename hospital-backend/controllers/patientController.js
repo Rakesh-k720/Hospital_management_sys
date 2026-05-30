@@ -68,10 +68,45 @@ exports.bookAppointment = async (req, res) => {
             [tokenNumber, patientId, doctor_id, department_id, appointment_date, priority || 'normal']
         );
 
+        const [userRow] = await db.execute(
+            `SELECT u.id, u.name, u.phone, doc_u.name as doctor_name
+       FROM users u
+       JOIN patients p ON p.user_id = u.id
+       JOIN doctors d ON d.id = ?
+       JOIN users doc_u ON d.user_id = doc_u.id
+       WHERE p.id = ?`,
+            [doctor_id, patientId]
+        );
+
+        if (userRow[0]?.id) {
+            const { createNotification } = require('../utils/notifyUser');
+            createNotification(
+                userRow[0].id,
+                'Appointment Confirmed',
+                `Token ${tokenNumber} — queue #${queuePosition}`,
+                '/patient/token'
+            );
+        }
+
+        if (userRow[0]?.phone) {
+            const { sendTokenBookingAlert } = require('../services/notificationService');
+            sendTokenBookingAlert({
+                userId: userRow[0].id,
+                phone: userRow[0].phone,
+                patientName: userRow[0].name,
+                tokenNumber,
+                doctorName: userRow[0].doctor_name,
+                appointmentDate: appointment_date,
+                appointmentTime: appointment_time,
+                queuePosition
+            }).catch((err) => console.error('Notification error:', err.message));
+        }
+
         sendResponse(res, 201, 'Appointment booked successfully', {
             tokenNumber,
             queuePosition,
-            appointmentDate: appointment_date
+            appointmentDate: appointment_date,
+            notificationSent: Boolean(userRow[0]?.phone)
         });
     } catch (err) {
         console.error(err);
@@ -140,6 +175,36 @@ exports.getMyPrescriptions = async (req, res) => {
         }
 
         sendResponse(res, 200, 'Prescriptions fetched', rows);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.cancelAppointment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
+
+        const [appt] = await db.execute(
+            'SELECT * FROM appointments WHERE id = ? AND patient_id = ?',
+            [id, patient[0].id]
+        );
+        if (!appt[0]) return sendResponse(res, 404, 'Appointment not found');
+        if (appt[0].status === 'completed' || appt[0].status === 'cancelled') {
+            return sendResponse(res, 400, 'Cannot cancel this appointment');
+        }
+
+        await db.execute('UPDATE appointments SET status = "cancelled" WHERE id = ?', [id]);
+        await db.execute(
+            `UPDATE opd_tokens SET status = 'completed'
+       WHERE patient_id = ? AND doctor_id = ? AND visit_date = ? AND status = 'waiting'`,
+            [appt[0].patient_id, appt[0].doctor_id, appt[0].appointment_date]
+        );
+
+        sendResponse(res, 200, 'Appointment cancelled');
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error');

@@ -9,6 +9,7 @@ import {
 import Button from '../../ui/Button';
 import { Link } from 'react-router-dom';
 import API from '../../../services/api';
+import { showToast } from '../../../utils/toast';
 
 const PatientHome = () => {
     const [dashboard, setDashboard] = useState(null);
@@ -119,6 +120,24 @@ const PatientHome = () => {
                                                 <p className="text-sm font-bold text-secondary-900">{new Date(appt.appointment_date).toLocaleDateString()}</p>
                                                 <p className="text-[10px] text-secondary-400 font-bold uppercase">{appt.appointment_time}</p>
                                                 <Badge variant={appt.status === 'completed' ? 'success' : 'warning'} className="mt-2">{appt.status}</Badge>
+                                                {appt.status === 'pending' && (
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="mt-2 text-[10px]"
+                                                        onClick={async () => {
+                                                            try {
+                                                                await API.patch(`/patient/appointments/${appt.id}/cancel`);
+                                                                showToast('Appointment cancelled');
+                                                                window.location.reload();
+                                                            } catch (err) {
+                                                                showToast('Cancel failed', 'error');
+                                                            }
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -176,9 +195,11 @@ const PatientHome = () => {
                                     <span className="font-bold">{bills[0] ? new Date(bills[0].bill_date).toLocaleDateString() : 'N/A'}</span>
                                 </div>
                             </div>
-                            <Button className="w-full mt-6 bg-white text-primary-600 hover:bg-primary-50 font-bold py-2.5 text-xs shadow-soft rounded-xl">
-                                Pay Outstanding Bill
-                            </Button>
+                            <Link to="/patient/billing">
+                                <Button className="w-full mt-6 bg-white text-primary-600 hover:bg-primary-50 font-bold py-2.5 text-xs shadow-soft rounded-xl">
+                                    Pay Outstanding Bill
+                                </Button>
+                            </Link>
                         </CardContent>
                     </Card>
 

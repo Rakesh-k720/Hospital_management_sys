@@ -16,37 +16,44 @@ import {
     X
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
+import { useTranslation } from 'react-i18next';
 
 const Sidebar = ({ role, isOpen, onClose }) => {
+    const { t } = useTranslation();
     const menuItems = {
         admin: [
-            { name: 'Dashboard', icon: LayoutDashboard, path: '/admin' },
-            { name: 'Doctors', icon: Stethoscope, path: '/admin/doctors' },
-            { name: 'Patients', icon: Users, path: '/admin/patients' },
-            { name: 'OPD Management', icon: ClipboardList, path: '/admin/opd' },
-            { name: 'IPD / Admission', icon: Bed, path: '/admin/ipd' },
-            { name: 'Appointments', icon: Calendar, path: '/admin/appointments' },
-            { name: 'Billing', icon: CreditCard, path: '/admin/billing' },
-            { name: 'Reports', icon: BarChart3, path: '/admin/reports' },
-            { name: 'Settings', icon: Settings, path: '/admin/settings' },
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/admin' },
+            { nameKey: 'nav.doctors', icon: Stethoscope, path: '/admin/doctors' },
+            { nameKey: 'nav.patients', icon: Users, path: '/admin/patients' },
+            { nameKey: 'nav.opd', icon: ClipboardList, path: '/admin/opd' },
+            { nameKey: 'nav.ipd', icon: Bed, path: '/admin/ipd' },
+            { nameKey: 'nav.appointments', icon: Calendar, path: '/admin/appointments' },
+            { nameKey: 'nav.billing', icon: CreditCard, path: '/admin/billing' },
+            { nameKey: 'nav.laboratory', icon: FlaskConical, path: '/admin/lab' },
+            { nameKey: 'nav.departments', icon: ClipboardList, path: '/admin/departments' },
+            { nameKey: 'nav.inventory', icon: Pill, path: '/admin/inventory' },
+            { nameKey: 'nav.discharge', icon: BarChart3, path: '/admin/reports' },
+            { nameKey: 'nav.analytics', icon: BarChart3, path: '/admin/analytics' },
+            { nameKey: 'nav.audit', icon: Settings, path: '/admin/audit' },
+            { nameKey: 'nav.settings', icon: Settings, path: '/admin/settings' },
         ],
         doctor: [
-            { name: 'Dashboard', icon: LayoutDashboard, path: '/doctor' },
-            { name: 'Appointments', icon: Calendar, path: '/doctor/appointments' },
-            { name: 'OPD Queue', icon: ClipboardList, path: '/doctor/queue' },
-            { name: 'My Patients', icon: Users, path: '/doctor/patients' },
-            { name: 'IPD Stats', icon: Bed, path: '/doctor/ipd' },
-            { name: 'Lab Requests', icon: FlaskConical, path: '/doctor/labs' },
-            { name: 'Profile', icon: UserRound, path: '/doctor/profile' },
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/doctor' },
+            { nameKey: 'nav.appointments', icon: Calendar, path: '/doctor/appointments' },
+            { nameKey: 'nav.opdQueue', icon: ClipboardList, path: '/doctor/queue' },
+            { nameKey: 'nav.myPatients', icon: Users, path: '/doctor/patients' },
+            { nameKey: 'nav.ipd', icon: Bed, path: '/doctor/ipd' },
+            { nameKey: 'nav.labRequests', icon: FlaskConical, path: '/doctor/labs' },
+            { nameKey: 'nav.profile', icon: UserRound, path: '/doctor/profile' },
         ],
         patient: [
-            { name: 'Dashboard', icon: LayoutDashboard, path: '/patient' },
-            { name: 'Book Appointment', icon: Calendar, path: '/patient/book' },
-            { name: 'OPD Token', icon: ClipboardList, path: '/patient/token' },
-            { name: 'My Reports', icon: FlaskConical, path: '/patient/reports' },
-            { name: 'Prescriptions', icon: Pill, path: '/patient/prescriptions' },
-            { name: 'Bills', icon: CreditCard, path: '/patient/billing' },
-            { name: 'Profile', icon: UserRound, path: '/patient/profile' },
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/patient' },
+            { nameKey: 'nav.bookAppointment', icon: Calendar, path: '/patient/book' },
+            { nameKey: 'nav.opdToken', icon: ClipboardList, path: '/patient/token' },
+            { nameKey: 'nav.reports', icon: FlaskConical, path: '/patient/reports' },
+            { nameKey: 'nav.prescriptions', icon: Pill, path: '/patient/prescriptions' },
+            { nameKey: 'nav.bills', icon: CreditCard, path: '/patient/billing' },
+            { nameKey: 'nav.profile', icon: UserRound, path: '/patient/profile' },
         ]
     };
 
@@ -75,7 +82,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                             <div className="bg-primary-600 p-2 rounded-lg text-white">
                                 <Stethoscope size={24} />
                             </div>
-                            <h1 className="text-xl font-bold font-['Outfit'] text-secondary-900">LifeLine</h1>
+                            <h1 className="text-xl font-bold font-['Outfit'] text-secondary-900">{t('app.name')}</h1>
                         </div>
                         <button onClick={onClose} className="lg:hidden text-secondary-500 hover:text-secondary-900">
                             <X size={20} />
@@ -85,12 +92,13 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                     {/* Navigation */}
                     <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
                         <p className="px-2 pb-2 text-xs font-semibold text-secondary-400 uppercase tracking-wider">
-                            Main Menu
+                            {t('nav.mainMenu')}
                         </p>
                         {items.map((item) => (
                             <NavLink
-                                key={item.name}
+                                key={item.path}
                                 to={item.path}
+                                end={item.path === '/doctor' || item.path === '/patient' || item.path === '/admin'}
                                 className={({ isActive }) => twMerge(
                                     "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                                     isActive
@@ -103,7 +111,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                                     "transition-colors",
                                     "group-hover:text-primary-500"
                                 )} />
-                                {item.name}
+                                {t(item.nameKey)}
                             </NavLink>
                         ))}
                     </nav>

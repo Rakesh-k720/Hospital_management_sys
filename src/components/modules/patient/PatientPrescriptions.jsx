@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import Badge from '../../ui/Badge';
-import { FileHeart, Pill, Calendar, User } from 'lucide-react';
+import { FileHeart, Pill, Download } from 'lucide-react';
+import Button from '../../ui/Button';
 import API from '../../../services/api';
+import { downloadPrescriptionPdf } from '../../../utils/pdfExport';
 
 const PatientPrescriptions = () => {
     const [prescriptions, setPrescriptions] = useState([]);
@@ -46,11 +48,13 @@ const PatientPrescriptions = () => {
                                     <p className="text-xs text-secondary-500">{p.specialization || 'Specialist'}</p>
                                 </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex flex-col items-end gap-2">
                                 <p className="text-sm font-bold text-secondary-700">
-                                    {new Date(p.appointment_date).toLocaleDateString()}
+                                    {new Date(p.created_at).toLocaleDateString()}
                                 </p>
-                                <Badge variant="primary" className="mt-1">Active</Badge>
+                                <Button size="sm" variant="outline" onClick={() => downloadPrescriptionPdf(p)}>
+                                    <Download size={12} className="mr-1" /> PDF
+                                </Button>
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">

@@ -228,17 +228,4 @@ INSERT INTO `departments` (`name`, `description`) VALUES
 ('Pediatrics', 'Child healthcare'),
 ('General Medicine', 'General health issues');
 
--- 2. Sample Admin/Doctor Users
-INSERT INTO `users` (`name`, `email`, `phone`, `password`, `role`) VALUES 
-('Admin User', 'admin@hospital.com', '1234567890', 'hash_pass_admin', 'admin'),
-('Dr. Smith', 'smith@hospital.com', '1234567891', 'hash_pass_smith', 'doctor');
-
--- 3. Doctor Details
-INSERT INTO `doctors` (`user_id`, `department_id`, `specialization`, `experience_years`, `room_number`, `consultation_fee`) VALUES 
-(2, 1, 'Cardiologist', 12, '101A', 500.00);
-
--- 4. Sample Patient
-INSERT INTO `users` (`name`, `email`, `phone`, `password`, `role`) VALUES 
-('Rakesh Kumar', 'rakesh@gmail.com', '9876543210', 'hash_pass_john', 'patient');
-INSERT INTO `patients` (`user_id`, `age`, `gender`, `blood_group`, `address`) VALUES 
-(3, 20, 'male', 'A+', 'Street 1, NY');
+-- Demo users are created by: cd hospital-backend && npm run seed

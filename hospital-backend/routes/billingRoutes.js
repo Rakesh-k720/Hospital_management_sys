@@ -7,6 +7,8 @@ router.use(protect);
 
 router.get('/all', authorize('admin'), billingController.getAllBills);
 router.post('/generate', authorize('admin', 'doctor'), billingController.generateBill);
+router.post('/generate-manual', authorize('admin'), billingController.generateManualBill);
+router.get('/:id/items', authorize('admin', 'patient'), billingController.getBillItems);
 router.put('/pay', authorize('admin', 'patient'), billingController.updatePayment);
 
 module.exports = router;

@@ -13,5 +13,6 @@ router.post('/appointments', patientController.bookAppointment);
 router.get('/appointments', patientController.getMyAppointments);
 router.get('/bills', patientController.getMyBills);
 router.get('/prescriptions', patientController.getMyPrescriptions);
+router.patch('/appointments/:id/cancel', patientController.cancelAppointment);
 
 module.exports = router;

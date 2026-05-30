@@ -126,29 +126,9 @@ const Signup = () => {
                             </div>
                         </div>
 
-                        <div className="md:col-span-2 space-y-1">
-                            <label className="text-xs font-bold text-secondary-700 ml-1">Account Role</label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {[
-                                    { id: 'patient', label: 'Patient', icon: Heart },
-                                    { id: 'doctor', label: 'Doctor', icon: Stethoscope },
-                                    { id: 'admin', label: 'Admin', icon: ShieldCheck },
-                                ].map((role) => (
-                                    <button
-                                        key={role.id}
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, role: role.id })}
-                                        className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${formData.role === role.id
-                                            ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-soft'
-                                            : 'border-slate-100 bg-slate-50 text-secondary-500 hover:border-primary-200'
-                                            }`}
-                                    >
-                                        <role.icon size={20} />
-                                        <span className="text-[10px] font-bold uppercase">{role.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        <p className="md:col-span-2 text-xs text-secondary-500 bg-slate-50 p-3 rounded-xl">
+                            Patient accounts only. Doctors and admins are created by hospital administration.
+                        </p>
 
                         <Button
                             type="submit"

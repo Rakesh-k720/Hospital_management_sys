@@ -4,8 +4,11 @@ import API from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Button from '../ui/Button';
 import { Stethoscope, LogIn, Mail, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 const Login = ({ setAuth }) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -46,13 +49,14 @@ const Login = ({ setAuth }) => {
 
     return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <div className="absolute top-4 right-4"><LanguageSwitcher /></div>
             <Card className="max-w-md w-full border-none shadow-premium bg-white rounded-3xl overflow-hidden">
                 <CardHeader className="text-center pt-10 pb-6 border-none">
                     <div className="bg-primary-600 w-16 h-16 rounded-2xl text-white flex items-center justify-center mx-auto mb-4 shadow-soft">
                         <Stethoscope size={32} />
                     </div>
-                    <CardTitle className="text-3xl font-bold font-['Outfit'] text-secondary-900">Welcome Back</CardTitle>
-                    <p className="text-secondary-500 text-sm mt-2">Enter your credentials to access HMS</p>
+                    <CardTitle className="text-3xl font-bold font-['Outfit'] text-secondary-900">{t('auth.welcomeBack')}</CardTitle>
+                    <p className="text-secondary-500 text-sm mt-2">{t('app.tagline')}</p>
                 </CardHeader>
                 <CardContent className="px-10 pb-10">
                     <form onSubmit={handleSubmit} className="space-y-5">
@@ -99,7 +103,7 @@ const Login = ({ setAuth }) => {
                                 <input type="checkbox" className="rounded-md border-slate-300 text-primary-600 focus:ring-primary-500" />
                                 Remember me
                             </label>
-                            <a href="#" className="font-bold text-primary-600 hover:underline">Forgot password?</a>
+                            <Link to="/forgot-password" className="font-bold text-primary-600 hover:underline">Forgot password?</Link>
                         </div>
 
                         <Button

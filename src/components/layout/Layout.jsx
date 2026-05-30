@@ -4,6 +4,7 @@ import Topbar from './Topbar';
 
 const Layout = ({ role, children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -16,6 +17,7 @@ const Layout = ({ role, children }) => {
             <div className="lg:pl-64 flex flex-col min-h-screen transition-all">
                 <Topbar
                     role={role}
+                    user={user}
                     onMenuClick={() => setIsSidebarOpen(true)}
                 />
 

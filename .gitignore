@@ -26,6 +26,8 @@ dist-ssr
 # HMS specific
 hospital-backend/node_modules
 hospital-backend/.env
+hospital-backend/backups/
+hospital-backend/uploads/
 .env
 .env.local
 .env.development.local

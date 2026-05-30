@@ -19,20 +19,53 @@ exports.getDashboardStats = async (req, res) => {
     }
 };
 
-// Get Doctor's Appointments
+// Get Doctor's Appointments (?date=YYYY-MM-DD or ?range=all)
 exports.getAppointments = async (req, res) => {
     try {
         const doctorId = req.user.id;
+        const { date, range } = req.query;
         const [doc] = await db.execute('SELECT id FROM doctors WHERE user_id = ?', [doctorId]);
 
-        const [rows] = await db.execute(`
-      SELECT a.*, p.blood_group, u.name as patient_name, u.phone as patient_phone 
+        if (!doc[0]) {
+            return sendResponse(res, 404, 'Doctor profile not found');
+        }
+
+        let dateClause = 'AND a.appointment_date = CURDATE()';
+        const params = [doc[0].id];
+
+        if (range === 'all') {
+            dateClause = '';
+        } else if (date) {
+            dateClause = 'AND a.appointment_date = ?';
+            params.push(date);
+        }
+
+        const [rows] = await db.execute(
+            `
+      SELECT 
+        a.*, 
+        p.blood_group, 
+        p.age,
+        p.gender,
+        u.name as patient_name, 
+        u.phone as patient_phone,
+        dep.name as department_name,
+        t.id as token_id,
+        t.token_number,
+        t.priority,
+        t.status as token_status
       FROM appointments a
       JOIN patients p ON a.patient_id = p.id
       JOIN users u ON p.user_id = u.id
-      WHERE a.doctor_id = ? AND a.appointment_date = CURDATE()
-      ORDER BY a.appointment_time ASC
-    `, [doc[0].id]);
+      JOIN departments dep ON a.department_id = dep.id
+      LEFT JOIN opd_tokens t ON a.patient_id = t.patient_id 
+        AND a.doctor_id = t.doctor_id 
+        AND a.appointment_date = t.visit_date
+      WHERE a.doctor_id = ? ${dateClause}
+      ORDER BY a.appointment_date DESC, a.appointment_time ASC
+    `,
+            params
+        );
 
         sendResponse(res, 200, 'Appointments fetched', rows);
     } catch (err) {
@@ -68,6 +101,17 @@ exports.createPrescription = async (req, res) => {
             }
         }
 
+        await connection.execute(
+            `UPDATE opd_tokens SET status = 'completed'
+       WHERE patient_id = ? AND doctor_id = ? AND visit_date = CURDATE() AND status != 'completed'`,
+            [patient_id, doc[0].id]
+        );
+        await connection.execute(
+            `UPDATE appointments SET status = 'completed'
+       WHERE patient_id = ? AND doctor_id = ? AND appointment_date = CURDATE() AND status != 'cancelled'`,
+            [patient_id, doc[0].id]
+        );
+
         await connection.commit();
         sendResponse(res, 201, 'Prescription created successfully', { prescriptionId: prescId });
     } catch (err) {
@@ -92,6 +136,87 @@ exports.requestLabTest = async (req, res) => {
         );
 
         sendResponse(res, 201, 'Lab test requested successfully');
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.getMyPatients = async (req, res) => {
+    try {
+        const [doc] = await db.execute('SELECT id FROM doctors WHERE user_id = ?', [req.user.id]);
+        if (!doc[0]) return sendResponse(res, 404, 'Doctor profile not found');
+
+        const [rows] = await db.execute(
+            `SELECT
+        p.id as patient_id,
+        u.name,
+        u.phone,
+        u.email,
+        p.age,
+        p.gender,
+        p.blood_group,
+        p.address,
+        p.emergency_contact,
+        p.allergies,
+        p.medical_notes,
+        MAX(a.appointment_date) as last_visit,
+        COUNT(DISTINCT a.id) as visit_count,
+        (SELECT COUNT(*) FROM prescriptions pr WHERE pr.patient_id = p.id AND pr.doctor_id = ?) as prescription_count,
+        (SELECT COUNT(*) FROM lab_reports lr WHERE lr.patient_id = p.id AND lr.doctor_id = ? AND lr.status = 'pending') as pending_labs
+       FROM appointments a
+       JOIN patients p ON a.patient_id = p.id
+       JOIN users u ON p.user_id = u.id
+       WHERE a.doctor_id = ?
+       GROUP BY p.id, u.name, u.phone, u.email, p.age, p.gender, p.blood_group,
+                p.address, p.emergency_contact, p.allergies, p.medical_notes
+       ORDER BY last_visit DESC`,
+            [doc[0].id, doc[0].id, doc[0].id]
+        );
+        sendResponse(res, 200, 'Patients fetched', rows);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.getDoctorAdmissions = async (req, res) => {
+    try {
+        const [doc] = await db.execute('SELECT id FROM doctors WHERE user_id = ?', [req.user.id]);
+        if (!doc[0]) return sendResponse(res, 404, 'Doctor profile not found');
+
+        const [rows] = await db.execute(
+            `SELECT a.*, u.name as patient_name, b.bed_number, b.ward_name
+       FROM admissions a
+       JOIN patients p ON a.patient_id = p.id
+       JOIN users u ON p.user_id = u.id
+       JOIN beds b ON a.bed_id = b.id
+       WHERE a.doctor_id = ? AND a.status = 'admitted'`,
+            [doc[0].id]
+        );
+        sendResponse(res, 200, 'IPD patients fetched', rows);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.getDoctorLabRequests = async (req, res) => {
+    try {
+        const [doc] = await db.execute('SELECT id FROM doctors WHERE user_id = ?', [req.user.id]);
+        if (!doc[0]) return sendResponse(res, 404, 'Doctor profile not found');
+
+        const [rows] = await db.execute(
+            `SELECT lr.*, u.name as patient_name, lt.test_name, lt.price
+       FROM lab_reports lr
+       JOIN patients p ON lr.patient_id = p.id
+       JOIN users u ON p.user_id = u.id
+       JOIN lab_tests lt ON lr.test_id = lt.id
+       WHERE lr.doctor_id = ?
+       ORDER BY lr.created_at DESC`,
+            [doc[0].id]
+        );
+        sendResponse(res, 200, 'Lab requests fetched', rows);
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error');

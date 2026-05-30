@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/userModel');
 const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
@@ -8,8 +9,8 @@ const { sendResponse } = require('../utils/responseHandler');
 exports.register = async (req, res) => {
     const connection = await db.getConnection();
     try {
-        const { name, email, phone, password, role } = req.body;
-        const selectedRole = role || 'patient';
+        const { name, email, phone, password } = req.body;
+        const selectedRole = 'patient';
 
         // Check if user exists
         const userExists = await User.findByEmail(email);
@@ -35,11 +36,6 @@ exports.register = async (req, res) => {
             await connection.execute(
                 'INSERT INTO patients (user_id, age, gender, blood_group, address) VALUES (?, ?, ?, ?, ?)',
                 [userId, 18, 'other', null, null]
-            );
-        } else if (selectedRole === 'doctor') {
-            await connection.execute(
-                'INSERT INTO doctors (user_id, department_id, specialization, experience_years, room_number, consultation_fee) VALUES (?, ?, ?, ?, ?, ?)',
-                [userId, 1, 'General Physician', 0, null, 500]
             );
         }
 
@@ -93,6 +89,69 @@ exports.login = async (req, res) => {
                 role: user.role
             }
         });
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findByEmail(email);
+        if (!user) {
+            return sendResponse(res, 200, 'If the email exists, reset instructions have been sent.');
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const tokenHash = await bcrypt.hash(token, 10);
+        const expires = new Date(Date.now() + 3600000);
+
+        await db.execute(
+            'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+            [user.id, tokenHash, expires]
+        );
+
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/Hospital_management_sys/#/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+        console.log(`[PASSWORD RESET] ${email} → ${resetUrl}`);
+
+        const payload = { message: 'If the email exists, reset instructions have been sent.' };
+        if (process.env.NODE_ENV !== 'production') {
+            payload.devResetToken = token;
+            payload.devResetUrl = resetUrl;
+        }
+        sendResponse(res, 200, payload.message, payload);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, token, password } = req.body;
+        const user = await User.findByEmail(email);
+        if (!user) return sendResponse(res, 400, 'Invalid or expired reset token');
+
+        const [rows] = await db.execute(
+            `SELECT * FROM password_reset_tokens WHERE user_id = ? AND used = 0 AND expires_at > NOW() ORDER BY id DESC LIMIT 5`,
+            [user.id]
+        );
+
+        let matched = null;
+        for (const row of rows) {
+            if (await bcrypt.compare(token, row.token_hash)) {
+                matched = row;
+                break;
+            }
+        }
+        if (!matched) return sendResponse(res, 400, 'Invalid or expired reset token');
+
+        const hashed = await bcrypt.hash(password, 10);
+        await db.execute('UPDATE users SET password = ? WHERE id = ?', [hashed, user.id]);
+        await db.execute('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?', [user.id]);
+
+        sendResponse(res, 200, 'Password reset successful. You can login now.');
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error');
