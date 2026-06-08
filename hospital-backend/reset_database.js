@@ -62,8 +62,8 @@ async function main() {
 
         console.log('\n✅ Database reset complete!');
         console.log('Login: admin@hms.com / password123');
-        console.log('       alice@hms.com / password123');
-        console.log('       rakesh@gmail.com / password123');
+        console.log('Login: alice@hms.com / password123');
+        console.log('Login: rakesh@gmail.com / password123');
         process.exit(0);
     } catch (err) {
         console.error('Reset failed:', err.message);
