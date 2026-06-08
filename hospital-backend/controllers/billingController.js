@@ -24,7 +24,7 @@ exports.generateBill = async (req, res) => {
       SELECT lt.price 
       FROM lab_reports lr
       JOIN lab_tests lt ON lr.test_id = lt.id
-      WHERE lr.patient_id = ? AND lr.status = "completed" AND lr.created_at >= CURDATE()
+      WHERE lr.patient_id = ? AND lr.status = 'completed' AND lr.created_at >= CURDATE()
     `, [patient_id]);
 
         let labTotal = labs.reduce((sum, item) => sum + parseFloat(item.price), 0);
@@ -33,7 +33,7 @@ exports.generateBill = async (req, res) => {
 
         // 3. Create Bill
         const [billResult] = await connection.execute(
-            'INSERT INTO bills (patient_id, total_amount, payment_status) VALUES (?, ?, "unpaid")',
+            "INSERT INTO bills (patient_id, total_amount, payment_status) VALUES (?, ?, 'unpaid')",
             [patient_id, totalAmount]
         );
         const billId = billResult.insertId;
@@ -67,7 +67,7 @@ exports.updatePayment = async (req, res) => {
     try {
         const { bill_id, payment_method } = req.body;
         await db.execute(
-            'UPDATE bills SET payment_status = "paid", payment_method = ? WHERE id = ?',
+            "UPDATE bills SET payment_status = 'paid', payment_method = ? WHERE id = ?",
             [payment_method, bill_id]
         );
         sendResponse(res, 200, 'Payment updated successfully');
@@ -89,7 +89,7 @@ exports.generateManualBill = async (req, res) => {
         const totalAmount = items.reduce((sum, i) => sum + Number(i.cost) * (i.quantity || 1), 0);
 
         const [billResult] = await connection.execute(
-            'INSERT INTO bills (patient_id, total_amount, payment_status) VALUES (?, ?, "unpaid")',
+            "INSERT INTO bills (patient_id, total_amount, payment_status) VALUES (?, ?, 'unpaid')",
             [patient_id, totalAmount]
         );
         const billId = billResult.insertId;

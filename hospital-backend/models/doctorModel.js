@@ -11,7 +11,7 @@ const Doctor = {
             [doctorId]
         );
         const [pendingReports] = await db.execute(
-            'SELECT COUNT(*) as count FROM lab_reports WHERE doctor_id = ? AND status = "pending"',
+            "SELECT COUNT(*) as count FROM lab_reports WHERE doctor_id = ? AND status = 'pending'",
             [doctorId]
         );
         const [waitingQueue] = await db.execute(

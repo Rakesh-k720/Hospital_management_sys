@@ -10,15 +10,15 @@ exports.getDashboardStats = async (req, res) => {
         const patientId = patient[0].id;
 
         const [upcoming] = await db.execute(
-            'SELECT COUNT(*) as count FROM appointments WHERE patient_id = ? AND appointment_date >= CURDATE() AND status != "cancelled"',
+            "SELECT COUNT(*) as count FROM appointments WHERE patient_id = ? AND appointment_date >= CURDATE() AND status != 'cancelled'",
             [patientId]
         );
         const [totalVisits] = await db.execute(
-            'SELECT COUNT(*) as count FROM appointments WHERE patient_id = ? AND status = "completed"',
+            "SELECT COUNT(*) as count FROM appointments WHERE patient_id = ? AND status = 'completed'",
             [patientId]
         );
         const [pendingBills] = await db.execute(
-            'SELECT COUNT(*) as count FROM bills WHERE patient_id = ? AND payment_status != "paid"',
+            "SELECT COUNT(*) as count FROM bills WHERE patient_id = ? AND payment_status != 'paid'",
             [patientId]
         );
 
@@ -52,19 +52,19 @@ exports.bookAppointment = async (req, res) => {
 
         // 2. Calculate Queue Position
         const [waiting] = await db.execute(
-            'SELECT COUNT(*) as count FROM opd_tokens WHERE visit_date = ? AND department_id = ? AND status = "waiting"',
+            "SELECT COUNT(*) as count FROM opd_tokens WHERE visit_date = ? AND department_id = ? AND status = 'waiting'",
             [appointment_date, department_id]
         );
         const queuePosition = waiting[0].count + 1;
 
         // 3. Create Appointment & Token
         await db.execute(
-            'INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, ?, "pending")',
+            "INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, ?, 'pending')",
             [patientId, doctor_id, department_id, appointment_date, appointment_time]
         );
 
         await db.execute(
-            'INSERT INTO opd_tokens (token_number, patient_id, doctor_id, department_id, visit_date, priority, status) VALUES (?, ?, ?, ?, ?, ?, "waiting")',
+            "INSERT INTO opd_tokens (token_number, patient_id, doctor_id, department_id, visit_date, priority, status) VALUES (?, ?, ?, ?, ?, ?, 'waiting')",
             [tokenNumber, patientId, doctor_id, department_id, appointment_date, priority || 'normal']
         );
 
@@ -197,7 +197,7 @@ exports.cancelAppointment = async (req, res) => {
             return sendResponse(res, 400, 'Cannot cancel this appointment');
         }
 
-        await db.execute('UPDATE appointments SET status = "cancelled" WHERE id = ?', [id]);
+        await db.execute("UPDATE appointments SET status = 'cancelled' WHERE id = ?", [id]);
         await db.execute(
             `UPDATE opd_tokens SET status = 'completed'
        WHERE patient_id = ? AND doctor_id = ? AND visit_date = ? AND status = 'waiting'`,

@@ -16,12 +16,12 @@ exports.admitPatient = async (req, res) => {
 
         // 2. Create admission record
         await connection.execute(
-            'INSERT INTO admissions (patient_id, doctor_id, bed_id, admission_date, status, diagnosis) VALUES (?, ?, ?, NOW(), "admitted", ?)',
+            `INSERT INTO admissions (patient_id, doctor_id, bed_id, admission_date, status, diagnosis) VALUES (?, ?, ?, NOW(), 'admitted', ?)`,
             [patient_id, doctor_id, bed_id, diagnosis]
         );
 
         // 3. Update bed status
-        await connection.execute('UPDATE beds SET status = "occupied" WHERE id = ?', [bed_id]);
+        await connection.execute(`UPDATE beds SET status = 'occupied' WHERE id = ?`, [bed_id]);
 
         await connection.commit();
         sendResponse(res, 201, 'Patient admitted successfully');
@@ -51,12 +51,12 @@ exports.dischargePatient = async (req, res) => {
 
         // 2. Update admission record
         await connection.execute(
-            'UPDATE admissions SET discharge_date = NOW(), status = "discharged", diagnosis = ? WHERE id = ?',
+            `UPDATE admissions SET discharge_date = NOW(), status = 'discharged', diagnosis = ? WHERE id = ?`,
             [finalDiagnosis, admission_id]
         );
 
         // 3. Set bed to cleaning
-        await connection.execute('UPDATE beds SET status = "cleaning" WHERE id = ?', [admission[0].bed_id]);
+        await connection.execute(`UPDATE beds SET status = 'cleaning' WHERE id = ?`, [admission[0].bed_id]);
 
         // 4. Optionally create a bill (logic can be expanded)
         

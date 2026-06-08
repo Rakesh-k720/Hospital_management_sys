@@ -6,23 +6,23 @@ const Admin = {
         const [patients] = await db.execute('SELECT COUNT(*) as count FROM patients');
         const [doctors] = await db.execute('SELECT COUNT(*) as count FROM doctors');
         const [appointments] = await db.execute('SELECT COUNT(*) as count FROM appointments WHERE appointment_date = CURDATE()');
-        const [revenue] = await db.execute('SELECT SUM(total_amount) as total FROM bills WHERE payment_status = "paid"');
-        const [beds] = await db.execute('SELECT COUNT(*) as count FROM beds WHERE status = "available"');
+        const [revenue] = await db.execute("SELECT SUM(total_amount) as total FROM bills WHERE payment_status = 'paid'");
+        const [beds] = await db.execute("SELECT COUNT(*) as count FROM beds WHERE status = 'available'");
         const [totalBeds] = await db.execute('SELECT COUNT(*) as count FROM beds');
         const [waiting] = await db.execute(
-            'SELECT COUNT(*) as count FROM opd_tokens WHERE visit_date = CURDATE() AND status = "waiting"'
+            "SELECT COUNT(*) as count FROM opd_tokens WHERE visit_date = CURDATE() AND status = 'waiting'"
         );
         const [unpaidBills] = await db.execute(
-            'SELECT COUNT(*) as count FROM bills WHERE payment_status != "paid"'
+            "SELECT COUNT(*) as count FROM bills WHERE payment_status != 'paid'"
         );
         const [pendingLabs] = await db.execute(
-            'SELECT COUNT(*) as count FROM lab_reports WHERE status = "pending"'
+            "SELECT COUNT(*) as count FROM lab_reports WHERE status = 'pending'"
         );
         const [ipdAdmitted] = await db.execute(
-            'SELECT COUNT(*) as count FROM admissions WHERE status = "admitted"'
+            "SELECT COUNT(*) as count FROM admissions WHERE status = 'admitted'"
         );
         const [pendingRevenue] = await db.execute(
-            'SELECT COALESCE(SUM(total_amount), 0) as total FROM bills WHERE payment_status != "paid"'
+            "SELECT COALESCE(SUM(total_amount), 0) as total FROM bills WHERE payment_status != 'paid'"
         );
 
         return {

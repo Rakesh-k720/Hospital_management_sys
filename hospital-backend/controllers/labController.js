@@ -23,7 +23,7 @@ exports.uploadReport = async (req, res) => {
         const reportFile = uploaded.url || uploaded.filename;
 
         await db.execute(
-            'UPDATE lab_reports SET report_file = ?, result_notes = ?, status = "completed", report_date = NOW() WHERE id = ?',
+            "UPDATE lab_reports SET report_file = ?, result_notes = ?, status = 'completed', report_date = NOW() WHERE id = ?",
             [reportFile, result_notes, report_id]
         );
 
@@ -67,7 +67,7 @@ const reportListQuery = `
 // Get Pending Lab Requests (for Lab Staff/Admin)
 exports.getPendingRequests = async (req, res) => {
     try {
-        const [rows] = await db.execute(`${reportListQuery} WHERE lr.status = "pending" ORDER BY lr.created_at ASC`);
+        const [rows] = await db.execute(`${reportListQuery} WHERE lr.status = 'pending' ORDER BY lr.created_at ASC`);
         sendResponse(res, 200, 'Pending requests fetched', rows);
     } catch (err) {
         console.error(err);
@@ -152,7 +152,7 @@ exports.createLabRequestAdmin = async (req, res) => {
         }
 
         const [result] = await db.execute(
-            'INSERT INTO lab_reports (patient_id, doctor_id, test_id, status) VALUES (?, ?, ?, "pending")',
+            "INSERT INTO lab_reports (patient_id, doctor_id, test_id, status) VALUES (?, ?, ?, 'pending')",
             [patient_id, doctor_id, test_id]
         );
 

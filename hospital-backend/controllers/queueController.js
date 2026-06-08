@@ -239,18 +239,18 @@ async function issueOpdToken(connection, {
     const tokenNumber = `T-${100 + tokenSeq}`;
 
     const [waiting] = await connection.execute(
-        'SELECT COUNT(*) as count FROM opd_tokens WHERE visit_date = ? AND department_id = ? AND status = "waiting"',
+        "SELECT COUNT(*) as count FROM opd_tokens WHERE visit_date = ? AND department_id = ? AND status = 'waiting'",
         [visit_date, department_id]
     );
     const queuePosition = waiting[0].count + 1;
 
     const time = appointment_time || '09:00:00';
     await connection.execute(
-        'INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, ?, "pending")',
+        "INSERT INTO appointments (patient_id, doctor_id, department_id, appointment_date, appointment_time, status) VALUES (?, ?, ?, ?, ?, 'pending')",
         [patient_id, doctor_id, department_id, visit_date, time]
     );
     const [tokenResult] = await connection.execute(
-        'INSERT INTO opd_tokens (token_number, patient_id, doctor_id, department_id, visit_date, priority, status) VALUES (?, ?, ?, ?, ?, ?, "waiting")',
+        "INSERT INTO opd_tokens (token_number, patient_id, doctor_id, department_id, visit_date, priority, status) VALUES (?, ?, ?, ?, ?, ?, 'waiting')",
         [tokenNumber, patient_id, doctor_id, department_id, visit_date, priority || 'normal']
     );
 

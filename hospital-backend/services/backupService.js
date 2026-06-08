@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
-const { ZipArchive } = require('archiver');
 const db = require('../config/db');
 
 const execFileAsync = promisify(execFile);
@@ -95,7 +94,8 @@ async function createDatabaseBackup() {
     };
 }
 
-function zipDirectory(sourceDir, outPath) {
+async function zipDirectory(sourceDir, outPath) {
+    const { ZipArchive } = await import('archiver');
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(sourceDir)) {
             fs.mkdirSync(sourceDir, { recursive: true });
@@ -132,6 +132,7 @@ async function createFullBackup() {
     const filename = `full-${timestamp()}.zip`;
     const filepath = path.join(BACKUP_DIR, filename);
 
+    const { ZipArchive } = await import('archiver');
     await new Promise((resolve, reject) => {
         const output = fs.createWriteStream(filepath);
         const archive = new ZipArchive({ zlib: { level: 9 } });
