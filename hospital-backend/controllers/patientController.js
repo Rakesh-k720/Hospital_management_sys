@@ -228,3 +228,107 @@ exports.getBookingMeta = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error');
     }
 };
+
+// Create support ticket
+exports.createTicket = async (req, res) => {
+    try {
+        const { title, category, description, priority } = req.body;
+        const userId = req.user.id;
+
+        // Find patient ID
+        const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
+        const patientId = patient[0].id;
+
+        // Insert ticket
+        const [result] = await db.execute(
+            'INSERT INTO support_tickets (patient_id, title, category, description, priority, status) VALUES (?, ?, ?, ?, ?, "open")',
+            [patientId, title, category, description, priority || 'medium']
+        );
+        const ticketId = result.insertId;
+
+        // Simulate an automatic response from support staff based on category
+        let autoReply = 'Thank you for reaching out. We have logged your request and our support desk is looking into it. We will update you shortly.';
+        if (category === 'billing') {
+            autoReply = 'We have received your billing query. Our finance team will review the invoice charges and get back to you within 24 hours. If there is a double payment, it will be refunded automatically.';
+        } else if (category === 'appointment') {
+            autoReply = 'We have received your appointment query. Our OPD desk has been notified. If the doctor is delayed, you will be updated via SMS.';
+        } else if (category === 'lab') {
+            autoReply = 'Your laboratory query has been routed to the pathology lab manager. Reports are usually uploaded within 2-4 hours of test completion.';
+        } else if (category === 'pharmacy') {
+            autoReply = 'Your pharmacy request has been sent to the in-house chemist. We will verify medicine stock and contact you for home delivery or pick up.';
+        }
+
+        // Add a delayed auto-reply update in the DB to make it feel extremely interactive (after 2 seconds)
+        setTimeout(async () => {
+            try {
+                await db.execute(
+                    'UPDATE support_tickets SET reply = ?, status = "in_progress" WHERE id = ?',
+                    [autoReply, ticketId]
+                );
+            } catch (err) {
+                console.error('Failed to update ticket auto reply:', err);
+            }
+        }, 2000);
+
+        sendResponse(res, 201, 'Support ticket created successfully', {
+            id: ticketId,
+            patient_id: patientId,
+            title,
+            category,
+            description,
+            priority: priority || 'medium',
+            status: 'open',
+            created_at: new Date()
+        });
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+// Get my support tickets
+exports.getMyTickets = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
+
+        const [tickets] = await db.execute(
+            'SELECT * FROM support_tickets WHERE patient_id = ? ORDER BY created_at DESC',
+            [patient[0].id]
+        );
+
+        sendResponse(res, 200, 'Support tickets fetched successfully', tickets);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+// Mark ticket as resolved/closed
+exports.resolveTicket = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        const [patient] = await db.execute('SELECT id FROM patients WHERE user_id = ?', [userId]);
+        if (!patient[0]) return sendResponse(res, 404, 'Patient profile not found');
+
+        const [ticket] = await db.execute(
+            'SELECT * FROM support_tickets WHERE id = ? AND patient_id = ?',
+            [id, patient[0].id]
+        );
+        if (!ticket[0]) return sendResponse(res, 404, 'Ticket not found');
+
+        await db.execute(
+            'UPDATE support_tickets SET status = "resolved" WHERE id = ?',
+            [id]
+        );
+
+        sendResponse(res, 200, 'Ticket marked as resolved');
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};

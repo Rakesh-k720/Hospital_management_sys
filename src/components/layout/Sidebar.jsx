@@ -13,7 +13,8 @@ import {
     Pill,
     BarChart3,
     Settings,
-    X
+    X,
+    HelpCircle
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +55,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             { nameKey: 'nav.prescriptions', icon: Pill, path: '/patient/prescriptions' },
             { nameKey: 'nav.bills', icon: CreditCard, path: '/patient/billing' },
             { nameKey: 'nav.profile', icon: UserRound, path: '/patient/profile' },
+            { nameKey: 'nav.helpdesk', icon: HelpCircle, path: '/patient/helpdesk' },
         ]
     };
 

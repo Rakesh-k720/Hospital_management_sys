@@ -15,4 +15,9 @@ router.get('/bills', patientController.getMyBills);
 router.get('/prescriptions', patientController.getMyPrescriptions);
 router.patch('/appointments/:id/cancel', patientController.cancelAppointment);
 
+// Support Ticket Routes
+router.post('/tickets', patientController.createTicket);
+router.get('/tickets', patientController.getMyTickets);
+router.patch('/tickets/:id/resolve', patientController.resolveTicket);
+
 module.exports = router;

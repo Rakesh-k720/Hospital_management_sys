@@ -23,6 +23,23 @@ pool.getConnection(async (err, connection) => {
         
         try {
             const promisePool = pool.promise();
+
+            // Create support_tickets table if it doesn't exist
+            await promisePool.execute(`
+                CREATE TABLE IF NOT EXISTS \`support_tickets\` (
+                    \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+                    \`patient_id\` INT NOT NULL,
+                    \`title\` VARCHAR(255) NOT NULL,
+                    \`category\` VARCHAR(100) NOT NULL,
+                    \`description\` TEXT NOT NULL,
+                    \`priority\` ENUM('low', 'medium', 'high') DEFAULT 'medium',
+                    \`status\` ENUM('open', 'in_progress', 'resolved', 'closed') DEFAULT 'open',
+                    \`reply\` TEXT,
+                    \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (\`patient_id\`) REFERENCES \`patients\`(\`id\`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            `);
             
             // 1. Seed departments if empty
             const [depts] = await promisePool.execute('SELECT COUNT(*) as count FROM departments');

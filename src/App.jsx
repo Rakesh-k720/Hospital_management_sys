@@ -39,6 +39,7 @@ import PatientBilling from './components/modules/patient/PatientBilling';
 import PatientPrescriptions from './components/modules/patient/PatientPrescriptions';
 import ProfilePage from './components/modules/shared/ProfilePage';
 import PatientProfilePage from './components/modules/patient/PatientProfilePage';
+import HelpdeskPage from './components/modules/patient/HelpdeskPage';
 
 import { LogOut } from 'lucide-react';
 
@@ -119,6 +120,7 @@ function App() {
                                     <Route path="/patient/billing" element={<PatientBilling />} />
                                     <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
                                     <Route path="/patient/profile" element={<PatientProfilePage />} />
+                                    <Route path="/patient/helpdesk" element={<HelpdeskPage />} />
                                     <Route path="*" element={<Navigate to="/patient" />} />
                                 </>
                             )}
