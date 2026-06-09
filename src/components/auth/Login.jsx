@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Button from '../ui/Button';
-import { Stethoscope, LogIn, Mail, Lock } from 'lucide-react';
+import { Stethoscope, LogIn, Mail, Lock, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
@@ -15,7 +15,38 @@ const Login = ({ setAuth }) => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setDeferredPrompt(e);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        const handleAppInstalled = () => {
+            setDeferredPrompt(null);
+        };
+
+        window.addEventListener('appinstalled', handleAppInstalled);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`PWA Install Choice: ${outcome}`);
+        setDeferredPrompt(null);
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -48,7 +79,7 @@ const Login = ({ setAuth }) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
             <div className="absolute top-4 right-4"><LanguageSwitcher /></div>
             <Card className="max-w-md w-full border-none shadow-premium bg-white rounded-3xl overflow-hidden">
                 <CardHeader className="text-center pt-10 pb-6 border-none">
@@ -130,6 +161,27 @@ const Login = ({ setAuth }) => {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Premium PWA Install Banner */}
+            {deferredPrompt && (
+                <div className="mt-6 max-w-md w-full bg-gradient-to-r from-primary-50 to-sky-50 border border-primary-100 rounded-3xl p-5 flex items-center justify-between shadow-soft animate-fade-in">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-primary-600 text-white p-3 rounded-2xl shadow-soft">
+                            <Download size={20} />
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-secondary-900 font-['Outfit']">Install HMS Desktop App</h4>
+                            <p className="text-xs text-secondary-500 mt-0.5">Use it offline and access files directly.</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleInstallClick}
+                        className="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
+                    >
+                        Install App
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
