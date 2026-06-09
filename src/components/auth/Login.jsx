@@ -193,12 +193,12 @@ const Login = ({ setAuth }) => {
                         </div>
                         <div>
                             <h4 className="text-sm font-bold text-secondary-900 font-['Outfit']">
-                                Install HMS {isMobile ? 'Mobile' : 'Desktop'} App
+                                {isMobile ? '📱 Get the App — Work Faster!' : '⚡ Run as Desktop App — No Browser Needed'}
                             </h4>
                             <p className="text-[11px] text-secondary-500 mt-0.5 leading-relaxed">
                                 {isMobile 
-                                    ? 'Access fast on your home screen & use offline.' 
-                                    : 'Use it offline and access files directly.'}
+                                    ? 'One tap access from home screen. Lightning fast.' 
+                                    : 'Instant launch, zero distractions, full speed.'}
                             </p>
                         </div>
                     </div>
