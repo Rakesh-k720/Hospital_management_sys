@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import API from '../../services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Button from '../ui/Button';
-import { Stethoscope, LogIn, Mail, Lock, Download } from 'lucide-react';
+import { Stethoscope, LogIn, Mail, Lock, Download, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
@@ -16,9 +16,13 @@ const Login = ({ setAuth }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showBanner, setShowBanner] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
+        setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+
         const handleBeforeInstallPrompt = (e) => {
             // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
@@ -163,22 +167,42 @@ const Login = ({ setAuth }) => {
             </Card>
 
             {/* Premium PWA Install Banner */}
-            {deferredPrompt && (
-                <div className="mt-6 max-w-md w-full bg-gradient-to-r from-primary-50 to-sky-50 border border-primary-100 rounded-3xl p-5 flex items-center justify-between shadow-soft animate-fade-in">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-primary-600 text-white p-3 rounded-2xl shadow-soft">
+            {deferredPrompt && showBanner && (
+                <div className="mt-6 max-w-md w-full bg-white/70 backdrop-blur-lg border border-slate-200/60 rounded-3xl p-5 flex items-center justify-between shadow-premium relative animate-fade-in">
+                    {/* Dismiss Button */}
+                    <button
+                        onClick={() => setShowBanner(false)}
+                        className="absolute top-3 right-3 text-secondary-400 hover:text-secondary-600 transition-colors p-1 rounded-full hover:bg-slate-100"
+                        title="Dismiss"
+                    >
+                        <X size={14} />
+                    </button>
+
+                    <div className="flex items-center gap-4 pr-4">
+                        <div className="relative flex items-center justify-center bg-primary-100 text-primary-600 w-12 h-12 rounded-2xl shadow-inner shrink-0">
                             <Download size={20} />
+                            {/* Glowing Green Dot */}
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
                         </div>
                         <div>
-                            <h4 className="text-sm font-bold text-secondary-900 font-['Outfit']">Install HMS Desktop App</h4>
-                            <p className="text-xs text-secondary-500 mt-0.5">Use it offline and access files directly.</p>
+                            <h4 className="text-sm font-bold text-secondary-900 font-['Outfit']">
+                                Install HMS {isMobile ? 'Mobile' : 'Desktop'} App
+                            </h4>
+                            <p className="text-[11px] text-secondary-500 mt-0.5 leading-relaxed">
+                                {isMobile 
+                                    ? 'Access fast on your home screen & use offline.' 
+                                    : 'Use it offline and access files directly.'}
+                            </p>
                         </div>
                     </div>
                     <button
                         onClick={handleInstallClick}
-                        className="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
+                        className="bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold px-4 py-3 rounded-xl transition-all shadow-md active:scale-95 shrink-0"
                     >
-                        Install App
+                        Install
                     </button>
                 </div>
             )}
