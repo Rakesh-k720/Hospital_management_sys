@@ -22,13 +22,21 @@ async function runSqlFile(connection, filePath, label) {
 }
 
 async function main() {
-    const connection = await mysql.createConnection({
+    const connConfig = {
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASS,
         port: process.env.DB_PORT || 3306,
         multipleStatements: true
-    });
+    };
+
+    if (process.env.DB_SSL === 'true') {
+        connConfig.ssl = {
+            rejectUnauthorized: true
+        };
+    }
+
+    const connection = await mysql.createConnection(connConfig);
 
     try {
         console.log('Dropping database:', dbName);

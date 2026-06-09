@@ -4,13 +4,21 @@ const path = require('path');
 require('dotenv').config();
 
 async function initDb() {
-    const connection = await mysql.createConnection({
+    const connConfig = {
         host: process.env.DB_HOST,
         user: process.env.DB_USER,
         password: process.env.DB_PASS,
         port: process.env.DB_PORT || 3306,
         multipleStatements: true
-    });
+    };
+
+    if (process.env.DB_SSL === 'true') {
+        connConfig.ssl = {
+            rejectUnauthorized: true
+        };
+    }
+
+    const connection = await mysql.createConnection(connConfig);
 
     console.log('Connected to MySQL server.');
 

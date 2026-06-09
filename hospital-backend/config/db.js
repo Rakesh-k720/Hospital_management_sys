@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const pool = mysql.createPool({
+const poolConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
@@ -12,7 +12,15 @@ const pool = mysql.createPool({
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
-});
+};
+
+if (process.env.DB_SSL === 'true') {
+    poolConfig.ssl = {
+        rejectUnauthorized: true
+    };
+}
+
+const pool = mysql.createPool(poolConfig);
 
 // Test connection and auto-seed tables if empty
 pool.getConnection(async (err, connection) => {
