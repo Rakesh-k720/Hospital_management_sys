@@ -14,7 +14,14 @@ import {
     BarChart3,
     Settings,
     X,
-    HelpCircle
+    HelpCircle,
+    Shield,
+    FileText,
+    Activity,
+    UserCog,
+    HeartPulse,
+    Syringe,
+    Calculator
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { useTranslation } from 'react-i18next';
@@ -31,9 +38,12 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             { nameKey: 'nav.appointments', icon: Calendar, path: '/admin/appointments' },
             { nameKey: 'nav.billing', icon: CreditCard, path: '/admin/billing' },
             { nameKey: 'nav.laboratory', icon: FlaskConical, path: '/admin/lab' },
+            { nameKey: 'nav.pharmacy', icon: Pill, path: '/admin/pharmacy' },
+            { nameKey: 'nav.insurance', icon: Shield, path: '/admin/insurance' },
             { nameKey: 'nav.departments', icon: ClipboardList, path: '/admin/departments' },
             { nameKey: 'nav.inventory', icon: Pill, path: '/admin/inventory' },
-            { nameKey: 'nav.discharge', icon: BarChart3, path: '/admin/reports' },
+            { nameKey: 'nav.staff', icon: UserCog, path: '/admin/staff' },
+            { nameKey: 'nav.reports', icon: BarChart3, path: '/admin/reports-dashboard' },
             { nameKey: 'nav.analytics', icon: BarChart3, path: '/admin/analytics' },
             { nameKey: 'nav.audit', icon: Settings, path: '/admin/audit' },
             { nameKey: 'nav.settings', icon: Settings, path: '/admin/settings' },
@@ -45,6 +55,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             { nameKey: 'nav.myPatients', icon: Users, path: '/doctor/patients' },
             { nameKey: 'nav.ipd', icon: Bed, path: '/doctor/ipd' },
             { nameKey: 'nav.labRequests', icon: FlaskConical, path: '/doctor/labs' },
+            { nameKey: 'nav.ehr', icon: HeartPulse, path: '/doctor/patients' },
             { nameKey: 'nav.profile', icon: UserRound, path: '/doctor/profile' },
         ],
         patient: [
@@ -56,7 +67,23 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             { nameKey: 'nav.bills', icon: CreditCard, path: '/patient/billing' },
             { nameKey: 'nav.profile', icon: UserRound, path: '/patient/profile' },
             { nameKey: 'nav.helpdesk', icon: HelpCircle, path: '/patient/helpdesk' },
-        ]
+        ],
+        receptionist: [
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/receptionist' },
+            { nameKey: 'nav.profile', icon: UserRound, path: '/receptionist/profile' },
+        ],
+        nurse: [
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/nurse' },
+            { nameKey: 'nav.profile', icon: UserRound, path: '/nurse/profile' },
+        ],
+        pharmacist: [
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/pharmacist' },
+            { nameKey: 'nav.profile', icon: UserRound, path: '/pharmacist/profile' },
+        ],
+        accountant: [
+            { nameKey: 'nav.dashboard', icon: LayoutDashboard, path: '/accountant' },
+            { nameKey: 'nav.profile', icon: UserRound, path: '/accountant/profile' },
+        ],
     };
 
     const items = menuItems[role] || [];
@@ -100,7 +127,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                             <NavLink
                                 key={item.path}
                                 to={item.path}
-                                end={item.path === '/doctor' || item.path === '/patient' || item.path === '/admin'}
+                                end={item.path === '/doctor' || item.path === '/patient' || item.path === '/admin' || item.path === '/receptionist' || item.path === '/nurse' || item.path === '/pharmacist' || item.path === '/accountant'}
                                 className={({ isActive }) => twMerge(
                                     "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                                     isActive

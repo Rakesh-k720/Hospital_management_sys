@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { sendResponse } = require('./utils/responseHandler');
 
@@ -14,6 +15,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+
+// Rate Limiting
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10,
+    message: { success: false, message: 'Too many login attempts. Please try again later.' }
+});
+const otpLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 5,
+    message: { success: false, message: 'Too many OTP attempts. Please try again later.' }
+});
 
 // Root Route
 app.get('/', (req, res) => {
@@ -42,6 +55,11 @@ const departmentRoutes = require('./routes/departmentRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+const pharmacyRoutes = require('./routes/pharmacyRoutes');
+const ehrRoutes = require('./routes/ehrRoutes');
+const staffRoutes = require('./routes/staffRoutes');
+const insuranceRoutes = require('./routes/insuranceRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -59,6 +77,15 @@ app.use('/api/departments', departmentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/pharmacy', pharmacyRoutes);
+app.use('/api/ehr', ehrRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/insurance', insuranceRoutes);
+app.use('/api/reports', reportRoutes);
+
+// Apply rate limiters to auth routes
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/verify-otp', otpLimiter);
 
 if (process.env.ENABLE_SWAGGER !== 'false') {
     try {

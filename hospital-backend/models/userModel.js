@@ -19,7 +19,7 @@ const User = {
 
     // Find user by ID
     findById: async (id) => {
-        const [rows] = await db.execute('SELECT id, name, email, role, status FROM users WHERE id = ?', [id]);
+        const [rows] = await db.execute('SELECT id, name, email, role, status, two_factor_enabled FROM users WHERE id = ?', [id]);
         return rows[0];
     }
 };

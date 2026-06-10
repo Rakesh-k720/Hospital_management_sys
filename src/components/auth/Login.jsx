@@ -6,6 +6,7 @@ import Button from '../ui/Button';
 import { Stethoscope, LogIn, Mail, Lock, Download, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
+import OTPVerification from './OTPVerification';
 
 const Login = ({ setAuth }) => {
     const { t } = useTranslation();
@@ -18,6 +19,7 @@ const Login = ({ setAuth }) => {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showBanner, setShowBanner] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    const [otpData, setOtpData] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -63,7 +65,15 @@ const Login = ({ setAuth }) => {
 
         try {
             const response = await API.post('/auth/login', formData);
-            const { token, user } = response.data.data;
+            const data = response.data.data;
+
+            // Check if 2FA is required
+            if (data.requires2FA) {
+                setOtpData({ userId: data.userId, email: data.email });
+                return;
+            }
+
+            const { token, user } = data;
 
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
@@ -71,9 +81,8 @@ const Login = ({ setAuth }) => {
             setAuth({ token, user });
 
             // Redirect based on role
-            if (user.role === 'admin') navigate('/admin');
-            else if (user.role === 'doctor') navigate('/doctor');
-            else navigate('/patient');
+            const roleRoutes = { admin: '/admin', doctor: '/doctor', receptionist: '/receptionist', nurse: '/nurse', pharmacist: '/pharmacist', accountant: '/accountant' };
+            navigate(roleRoutes[user.role] || `/${user.role}`);
 
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
@@ -81,6 +90,18 @@ const Login = ({ setAuth }) => {
             setLoading(false);
         }
     };
+
+    // Show OTP screen if 2FA required
+    if (otpData) {
+        return (
+            <OTPVerification
+                userId={otpData.userId}
+                email={otpData.email}
+                onBack={() => setOtpData(null)}
+                setAuth={setAuth}
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">

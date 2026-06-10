@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const User = require('../models/userModel');
 const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
+const { generateOTP, verifyOTP, sendOTP } = require('../utils/otpService');
+const auditLogger = require('../utils/auditLogger');
 
 // Register User
 exports.register = async (req, res) => {
@@ -73,12 +75,26 @@ exports.login = async (req, res) => {
             return sendResponse(res, 401, 'Invalid credentials');
         }
 
+        // Check if 2FA is enabled
+        if (user.two_factor_enabled) {
+            const otp = await generateOTP(user.id, 'login');
+            await sendOTP(user.email, otp, user.name);
+            await auditLogger.log(user.id, '2fa_otp_sent', 'user', user.id, { email: user.email });
+            return sendResponse(res, 200, 'OTP sent to your email', {
+                requires2FA: true,
+                userId: user.id,
+                email: user.email
+            });
+        }
+
         // Generate Token
         const token = jwt.sign(
             { id: user.id, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: process.env.JWT_EXPIRE }
         );
+
+        await auditLogger.log(user.id, 'login', 'user', user.id, { ip: req.ip });
 
         sendResponse(res, 200, 'Login successful', {
             token,
@@ -89,6 +105,83 @@ exports.login = async (req, res) => {
                 role: user.role
             }
         });
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+// Verify OTP for 2FA login
+exports.verifyOTPLogin = async (req, res) => {
+    try {
+        const { userId, otp } = req.body;
+        if (!userId || !otp) {
+            return sendResponse(res, 400, 'User ID and OTP are required');
+        }
+
+        const isValid = await verifyOTP(userId, otp, 'login');
+        if (!isValid) {
+            return sendResponse(res, 401, 'Invalid or expired OTP');
+        }
+
+        const [rows] = await db.execute('SELECT id, name, email, role, status FROM users WHERE id = ?', [userId]);
+        const user = rows[0];
+        if (!user || user.status !== 'active') {
+            return sendResponse(res, 401, 'Account not found or inactive');
+        }
+
+        const token = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRE }
+        );
+
+        await auditLogger.log(user.id, 'login_2fa', 'user', user.id, { ip: req.ip });
+
+        sendResponse(res, 200, 'Login successful', {
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+// Enable 2FA
+exports.enable2FA = async (req, res) => {
+    try {
+        await db.execute('UPDATE users SET two_factor_enabled = 1 WHERE id = ?', [req.user.id]);
+        await auditLogger.log(req.user.id, '2fa_enabled', 'user', req.user.id);
+        sendResponse(res, 200, 'Two-factor authentication enabled');
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+// Disable 2FA
+exports.disable2FA = async (req, res) => {
+    try {
+        await db.execute('UPDATE users SET two_factor_enabled = 0 WHERE id = ?', [req.user.id]);
+        await auditLogger.log(req.user.id, '2fa_disabled', 'user', req.user.id);
+        sendResponse(res, 200, 'Two-factor authentication disabled');
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error');
+    }
+};
+
+// Get 2FA status
+exports.get2FAStatus = async (req, res) => {
+    try {
+        const [rows] = await db.execute('SELECT two_factor_enabled FROM users WHERE id = ?', [req.user.id]);
+        sendResponse(res, 200, '2FA status', { enabled: rows[0]?.two_factor_enabled || false });
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error');

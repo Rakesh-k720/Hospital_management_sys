@@ -7,6 +7,7 @@ import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
+import OTPVerification from './components/auth/OTPVerification';
 import LobbyDisplay from './pages/LobbyDisplay';
 
 import AdminHome from './components/modules/admin/AdminHome';
@@ -23,6 +24,10 @@ import AdminAnalytics from './components/modules/admin/AdminAnalytics';
 import DepartmentManagement from './components/modules/admin/DepartmentManagement';
 import InventoryManagement from './components/modules/admin/InventoryManagement';
 import AuditLogs from './components/modules/admin/AuditLogs';
+import PharmacyManagement from './components/modules/admin/PharmacyManagement';
+import InsuranceManagement from './components/modules/admin/InsuranceManagement';
+import ReportsDashboard from './components/modules/admin/ReportsDashboard';
+import StaffManagement from './components/modules/admin/StaffManagement';
 
 import DoctorHome from './components/modules/doctor/DoctorHome';
 import DoctorAppointments from './components/modules/doctor/DoctorAppointments';
@@ -30,6 +35,7 @@ import PrescriptionForm from './components/modules/doctor/PrescriptionForm';
 import DoctorLabRequests from './components/modules/doctor/DoctorLabRequests';
 import DoctorPatients from './components/modules/doctor/DoctorPatients';
 import DoctorIpd from './components/modules/doctor/DoctorIpd';
+import EHRView from './components/modules/doctor/EHRView';
 
 import PatientHome from './components/modules/patient/PatientHome';
 import BookAppointment from './components/modules/patient/BookAppointment';
@@ -40,6 +46,11 @@ import PatientPrescriptions from './components/modules/patient/PatientPrescripti
 import ProfilePage from './components/modules/shared/ProfilePage';
 import PatientProfilePage from './components/modules/patient/PatientProfilePage';
 import HelpdeskPage from './components/modules/patient/HelpdeskPage';
+
+import ReceptionistHome from './components/modules/staff/ReceptionistHome';
+import NurseHome from './components/modules/staff/NurseHome';
+import PharmacistHome from './components/modules/staff/PharmacistHome';
+import AccountantHome from './components/modules/staff/AccountantHome';
 
 import { LogOut } from 'lucide-react';
 
@@ -92,6 +103,10 @@ function App() {
                             <Route path="/admin/departments" element={<DepartmentManagement />} />
                             <Route path="/admin/inventory" element={<InventoryManagement />} />
                             <Route path="/admin/audit" element={<AuditLogs />} />
+                            <Route path="/admin/pharmacy" element={<PharmacyManagement />} />
+                            <Route path="/admin/insurance" element={<InsuranceManagement />} />
+                            <Route path="/admin/reports-dashboard" element={<ReportsDashboard />} />
+                            <Route path="/admin/staff" element={<StaffManagement />} />
                             <Route path="*" element={<Navigate to="/admin" />} />
                                 </>
                             )}
@@ -105,6 +120,7 @@ function App() {
                                     <Route path="/doctor/patients" element={<DoctorPatients />} />
                                     <Route path="/doctor/ipd" element={<DoctorIpd />} />
                                     <Route path="/doctor/labs" element={<DoctorLabRequests />} />
+                                    <Route path="/doctor/ehr/:patientId" element={<EHRView />} />
                                     <Route path="/doctor/profile" element={<ProfilePage role="doctor" />} />
                                     <Route path="*" element={<Navigate to="/doctor" />} />
                                 </>
@@ -122,6 +138,41 @@ function App() {
                                     <Route path="/patient/profile" element={<PatientProfilePage />} />
                                     <Route path="/patient/helpdesk" element={<HelpdeskPage />} />
                                     <Route path="*" element={<Navigate to="/patient" />} />
+                                </>
+                            )}
+                            {auth.user.role === 'receptionist' && (
+                                <>
+                                    <Route path="/" element={<ReceptionistHome />} />
+                                    <Route path="/receptionist" element={<ReceptionistHome />} />
+                                    <Route path="/receptionist/profile" element={<ProfilePage role="receptionist" />} />
+                                    <Route path="*" element={<Navigate to="/receptionist" />} />
+                                </>
+                            )}
+
+                            {auth.user.role === 'nurse' && (
+                                <>
+                                    <Route path="/" element={<NurseHome />} />
+                                    <Route path="/nurse" element={<NurseHome />} />
+                                    <Route path="/nurse/profile" element={<ProfilePage role="nurse" />} />
+                                    <Route path="*" element={<Navigate to="/nurse" />} />
+                                </>
+                            )}
+
+                            {auth.user.role === 'pharmacist' && (
+                                <>
+                                    <Route path="/" element={<PharmacistHome />} />
+                                    <Route path="/pharmacist" element={<PharmacistHome />} />
+                                    <Route path="/pharmacist/profile" element={<ProfilePage role="pharmacist" />} />
+                                    <Route path="*" element={<Navigate to="/pharmacist" />} />
+                                </>
+                            )}
+
+                            {auth.user.role === 'accountant' && (
+                                <>
+                                    <Route path="/" element={<AccountantHome />} />
+                                    <Route path="/accountant" element={<AccountantHome />} />
+                                    <Route path="/accountant/profile" element={<ProfilePage role="accountant" />} />
+                                    <Route path="*" element={<Navigate to="/accountant" />} />
                                 </>
                             )}
                         </Routes>
