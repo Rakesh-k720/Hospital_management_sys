@@ -16,7 +16,7 @@ const Table = ({ className, children, ...props }) => {
 
 const TableHeader = ({ className, children, ...props }) => {
     return (
-        <thead className={twMerge('bg-slate-50/50 border-b border-slate-100', className)} {...props}>
+        <thead className={twMerge('bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700', className)} {...props}>
             {children}
         </thead>
     );
@@ -24,7 +24,7 @@ const TableHeader = ({ className, children, ...props }) => {
 
 const TableBody = ({ className, children, ...props }) => {
     return (
-        <tbody className={twMerge('divide-y divide-slate-100', className)} {...props}>
+        <tbody className={twMerge('divide-y divide-slate-100 dark:divide-slate-700', className)} {...props}>
             {children}
         </tbody>
     );
@@ -34,7 +34,7 @@ const TableRow = ({ className, children, ...props }) => {
     return (
         <tr
             className={twMerge(
-                'transition-colors hover:bg-slate-50/50 data-[state=selected]:bg-slate-50',
+                'transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/50 data-[state=selected]:bg-slate-50 dark:data-[state=selected]:bg-slate-700',
                 className
             )}
             {...props}
@@ -48,7 +48,7 @@ const TableHead = ({ className, children, ...props }) => {
     return (
         <th
             className={twMerge(
-                'h-12 px-4 text-left align-middle font-medium text-secondary-500 [&:has([role=checkbox])]:pr-0',
+                'h-12 px-4 text-left align-middle font-medium text-secondary-500 dark:text-secondary-400 [&:has([role=checkbox])]:pr-0',
                 className
             )}
             {...props}
@@ -61,7 +61,7 @@ const TableHead = ({ className, children, ...props }) => {
 const TableCell = ({ className, children, ...props }) => {
     return (
         <td
-            className={twMerge('p-4 align-middle [&:has([role=checkbox])]:pr-0', className)}
+            className={twMerge('p-4 align-middle text-secondary-900 dark:text-secondary-200 [&:has([role=checkbox])]:pr-0', className)}
             {...props}
         >
             {children}

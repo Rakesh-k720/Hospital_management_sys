@@ -6,6 +6,7 @@ const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
 const { generateOTP, verifyOTP, sendOTP } = require('../utils/otpService');
 const auditLogger = require('../utils/auditLogger');
+const emailService = require('../services/emailService');
 
 // Register User
 exports.register = async (req, res) => {
@@ -42,6 +43,14 @@ exports.register = async (req, res) => {
         }
 
         await connection.commit();
+
+        // Send welcome email (async, don't block response)
+        emailService.sendTemplatedEmail({
+            to: email,
+            subject: `Welcome to ${process.env.HOSPITAL_NAME || 'LifeLine Hospital'}!`,
+            template: 'welcome',
+            data: { userName: name }
+        }).catch(err => console.error('Welcome email error:', err.message));
 
         sendResponse(res, 201, 'User registered successfully', { userId });
     } catch (err) {

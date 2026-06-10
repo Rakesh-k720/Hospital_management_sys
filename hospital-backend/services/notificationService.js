@@ -131,3 +131,143 @@ exports.sendLabReportReadyAlert = async ({ userId, phone, patientName, testName 
     }
     return { status: 'failed' };
 };
+
+/**
+ * Send appointment confirmation alert
+ */
+exports.sendAppointmentConfirmAlert = async ({ userId, phone, patientName, doctorName, date, time }) => {
+    const hospital = process.env.HOSPITAL_NAME || 'LifeLine Hospital';
+    const message = `Dear ${patientName}, your appointment with Dr. ${doctorName} is confirmed for ${date} at ${time}. Thank you — ${hospital}`;
+    const formattedPhone = formatPhone(phone);
+    const client = getTwilio();
+
+    if (!client || !formattedPhone) {
+        console.log(`[HMS NOTIFY][SIMULATED] ${message}`);
+        await logNotification(userId, 'console', phone, message, 'simulated');
+        return { status: 'simulated' };
+    }
+
+    try {
+        if (process.env.TWILIO_PHONE_NUMBER) {
+            await client.messages.create({
+                body: message,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                to: formattedPhone
+            });
+            await logNotification(userId, 'sms', phone, message, 'sent');
+            return { status: 'sent', channel: 'sms' };
+        }
+    } catch (err) {
+        console.error('Appointment notify failed:', err.message);
+        await logNotification(userId, 'sms', phone, message, 'failed');
+    }
+    return { status: 'failed' };
+};
+
+/**
+ * Send bill ready alert
+ */
+exports.sendBillReadyAlert = async ({ userId, phone, patientName, billId, amount }) => {
+    const hospital = process.env.HOSPITAL_NAME || 'LifeLine Hospital';
+    const message = `Dear ${patientName}, your bill (INV-${billId}) of Rs. ${amount} is ready. Please make payment at your earliest convenience. — ${hospital}`;
+    const formattedPhone = formatPhone(phone);
+    const client = getTwilio();
+
+    if (!client || !formattedPhone) {
+        console.log(`[HMS NOTIFY][SIMULATED] ${message}`);
+        await logNotification(userId, 'console', phone, message, 'simulated');
+        return { status: 'simulated' };
+    }
+
+    try {
+        if (process.env.TWILIO_PHONE_NUMBER) {
+            await client.messages.create({
+                body: message,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                to: formattedPhone
+            });
+            await logNotification(userId, 'sms', phone, message, 'sent');
+            return { status: 'sent', channel: 'sms' };
+        }
+    } catch (err) {
+        console.error('Bill notify failed:', err.message);
+        await logNotification(userId, 'sms', phone, message, 'failed');
+    }
+    return { status: 'failed' };
+};
+
+/**
+ * Send admission alert
+ */
+exports.sendAdmissionAlert = async ({ userId, phone, patientName, wardName, bedNumber }) => {
+    const hospital = process.env.HOSPITAL_NAME || 'LifeLine Hospital';
+    const message = `Dear ${patientName}, you have been admitted to ${wardName}, Bed ${bedNumber}. Welcome to ${hospital}.`;
+    const formattedPhone = formatPhone(phone);
+    const client = getTwilio();
+
+    if (!client || !formattedPhone) {
+        console.log(`[HMS NOTIFY][SIMULATED] ${message}`);
+        await logNotification(userId, 'console', phone, message, 'simulated');
+        return { status: 'simulated' };
+    }
+
+    try {
+        if (process.env.TWILIO_PHONE_NUMBER) {
+            await client.messages.create({
+                body: message,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                to: formattedPhone
+            });
+            await logNotification(userId, 'sms', phone, message, 'sent');
+            return { status: 'sent', channel: 'sms' };
+        }
+    } catch (err) {
+        console.error('Admission notify failed:', err.message);
+        await logNotification(userId, 'sms', phone, message, 'failed');
+    }
+    return { status: 'failed' };
+};
+
+/**
+ * Send prescription ready alert
+ */
+exports.sendPrescriptionReadyAlert = async ({ userId, phone, patientName, doctorName }) => {
+    const hospital = process.env.HOSPITAL_NAME || 'LifeLine Hospital';
+    const message = `Dear ${patientName}, your prescription from Dr. ${doctorName} is ready. Login to ${hospital} patient portal to view.`;
+    const formattedPhone = formatPhone(phone);
+    const client = getTwilio();
+
+    if (!client || !formattedPhone) {
+        console.log(`[HMS NOTIFY][SIMULATED] ${message}`);
+        await logNotification(userId, 'console', phone, message, 'simulated');
+        return { status: 'simulated' };
+    }
+
+    try {
+        if (process.env.TWILIO_WHATSAPP_FROM) {
+            const waFrom = process.env.TWILIO_WHATSAPP_FROM.startsWith('whatsapp:')
+                ? process.env.TWILIO_WHATSAPP_FROM
+                : `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
+            await client.messages.create({
+                body: message,
+                from: waFrom,
+                to: `whatsapp:${formattedPhone}`
+            });
+            await logNotification(userId, 'whatsapp', phone, message, 'sent');
+            return { status: 'sent', channel: 'whatsapp' };
+        }
+        if (process.env.TWILIO_PHONE_NUMBER) {
+            await client.messages.create({
+                body: message,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                to: formattedPhone
+            });
+            await logNotification(userId, 'sms', phone, message, 'sent');
+            return { status: 'sent', channel: 'sms' };
+        }
+    } catch (err) {
+        console.error('Prescription notify failed:', err.message);
+        await logNotification(userId, 'sms', phone, message, 'failed');
+    }
+    return { status: 'failed' };
+};

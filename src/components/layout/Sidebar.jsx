@@ -101,26 +101,26 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
             {/* Sidebar */}
             <aside className={twMerge(
-                "fixed top-0 left-0 bottom-0 w-64 bg-white border-r border-slate-100 z-50 transition-transform lg:translate-x-0 shadow-premium",
+                "fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 z-50 transition-transform lg:translate-x-0 shadow-premium",
                 isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <div className="flex flex-col h-full">
                     {/* Logo */}
-                    <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+                    <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="bg-primary-600 p-2 rounded-lg text-white">
                                 <Stethoscope size={24} />
                             </div>
-                            <h1 className="text-xl font-bold font-['Outfit'] text-secondary-900">{t('app.name')}</h1>
+                            <h1 className="text-xl font-bold font-['Outfit'] text-secondary-900 dark:text-white">{t('app.name')}</h1>
                         </div>
-                        <button onClick={onClose} className="lg:hidden text-secondary-500 hover:text-secondary-900">
+                        <button onClick={onClose} className="lg:hidden text-secondary-500 dark:text-secondary-400 hover:text-secondary-900 dark:hover:text-white">
                             <X size={20} />
                         </button>
                     </div>
 
                     {/* Navigation */}
                     <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-                        <p className="px-2 pb-2 text-xs font-semibold text-secondary-400 uppercase tracking-wider">
+                        <p className="px-2 pb-2 text-xs font-semibold text-secondary-400 dark:text-secondary-500 uppercase tracking-wider">
                             {t('nav.mainMenu')}
                         </p>
                         {items.map((item) => (
@@ -131,8 +131,8 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                                 className={({ isActive }) => twMerge(
                                     "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all group",
                                     isActive
-                                        ? "bg-primary-50 text-primary-600 shadow-sm"
-                                        : "hover:bg-slate-50 hover:text-primary-600 text-secondary-600"
+                                        ? "bg-primary-50 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 shadow-sm"
+                                        : "hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-primary-600 dark:hover:text-primary-400 text-secondary-600 dark:text-secondary-300"
                                 )}
                                 onClick={onClose}
                             >
@@ -146,14 +146,14 @@ const Sidebar = ({ role, isOpen, onClose }) => {
                     </nav>
 
                     {/* User Role Info */}
-                    <div className="p-6 bg-slate-50 border-t border-slate-100">
+                    <div className="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700">
                         <div className="flex items-center gap-3">
-                            <div className="bg-white p-2 rounded-full shadow-sm text-primary-600">
+                            <div className="bg-white dark:bg-slate-700 p-2 rounded-full shadow-sm text-primary-600 dark:text-primary-400">
                                 <UserRound size={20} />
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-secondary-900 capitalize">{role}</p>
-                                <p className="text-xs text-secondary-500">Hospital Staff</p>
+                                <p className="text-sm font-bold text-secondary-900 dark:text-white capitalize">{role}</p>
+                                <p className="text-xs text-secondary-500 dark:text-secondary-400">Hospital Staff</p>
                             </div>
                         </div>
                     </div>

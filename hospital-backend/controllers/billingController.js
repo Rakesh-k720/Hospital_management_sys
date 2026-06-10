@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
+const emailService = require('../services/emailService');
 
 // Generate Bill for Patient
 exports.generateBill = async (req, res) => {
@@ -52,6 +53,38 @@ exports.generateBill = async (req, res) => {
         }
 
         await connection.commit();
+
+        // Send bill ready email (async, don't block response)
+        const [patientRow] = await connection.execute(
+            `SELECT u.email, u.name FROM patients p JOIN users u ON p.user_id = u.id WHERE p.id = ?`,
+            [patient_id]
+        );
+        if (patientRow[0]?.email) {
+            emailService.sendTemplatedEmail({
+                to: patientRow[0].email,
+                subject: 'Your Bill is Ready',
+                template: 'bill',
+                data: {
+                    patientName: patientRow[0].name,
+                    billId: billId,
+                    amount: totalAmount,
+                    date: new Date().toLocaleDateString()
+                }
+            }).catch(err => console.error('Bill email error:', err.message));
+        }
+
+        // Send bill ready SMS (async, don't block response)
+        if (patientRow[0]?.phone) {
+            const notificationService = require('../services/notificationService');
+            notificationService.sendBillReadyAlert({
+                userId: patientRow[0].id,
+                phone: patientRow[0].phone,
+                patientName: patientRow[0].name,
+                billId: billId,
+                amount: totalAmount
+            }).catch(err => console.error('Bill SMS error:', err.message));
+        }
+
         sendResponse(res, 201, 'Bill generated successfully', { billId, totalAmount });
     } catch (err) {
         await connection.rollback();

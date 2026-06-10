@@ -4,6 +4,7 @@ const User = require('../models/userModel');
 const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
 const auditLogger = require('../utils/auditLogger');
+const emailService = require('../services/emailService');
 
 // Get Dashboard Stats
 exports.getDashboardStats = async (req, res) => {
@@ -482,6 +483,33 @@ exports.createAppointment = async (req, res) => {
                 `Token ${tokenNumber} on ${appointment_date}`,
                 '/patient/token'
             ).catch(() => {});
+
+            // Send appointment confirmation email (async)
+            const [userEmail] = await connection.execute('SELECT email FROM users WHERE id = ?', [userRow[0].id]);
+            if (userEmail[0]?.email) {
+                emailService.sendTemplatedEmail({
+                    to: userEmail[0].email,
+                    subject: 'Appointment Confirmed',
+                    template: 'appointment',
+                    data: {
+                        patientName: userRow[0].name,
+                        doctorName: userRow[0].doctor_name,
+                        date: appointment_date,
+                        time: appointment_time
+                    }
+                }).catch(err => console.error('Appointment email error:', err.message));
+            }
+
+            // Send appointment confirmation SMS (async)
+            const notificationService = require('../services/notificationService');
+            notificationService.sendAppointmentConfirmAlert({
+                userId: userRow[0].id,
+                phone: userRow[0].phone,
+                patientName: userRow[0].name,
+                doctorName: userRow[0].doctor_name,
+                date: appointment_date,
+                time: appointment_time
+            }).catch(err => console.error('Appointment SMS error:', err.message));
         }
 
         const socketService = require('../services/socketService');

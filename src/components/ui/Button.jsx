@@ -5,10 +5,10 @@ import { twMerge } from 'tailwind-merge';
 const Button = React.forwardRef(({ className, variant = 'primary', size = 'md', ...props }, ref) => {
     const variants = {
         primary: 'bg-primary-600 text-white hover:bg-primary-700 shadow-soft',
-        secondary: 'bg-slate-100 text-secondary-700 hover:bg-slate-200',
-        outline: 'border border-slate-200 text-secondary-700 hover:bg-slate-50',
+        secondary: 'bg-slate-100 dark:bg-slate-700 text-secondary-700 dark:text-secondary-200 hover:bg-slate-200 dark:hover:bg-slate-600',
+        outline: 'border border-slate-200 dark:border-slate-600 text-secondary-700 dark:text-secondary-200 hover:bg-slate-50 dark:hover:bg-slate-700',
         danger: 'bg-danger text-white hover:bg-red-600 shadow-soft',
-        ghost: 'text-secondary-600 hover:bg-slate-100 hover:text-secondary-900',
+        ghost: 'text-secondary-600 dark:text-secondary-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-secondary-900 dark:hover:text-white',
         success: 'bg-success text-white hover:bg-green-600 shadow-soft',
     };
 

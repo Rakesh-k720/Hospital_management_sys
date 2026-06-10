@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const db = require('../config/db');
+const emailService = require('../services/emailService');
 
 /**
  * Generate a 6-digit OTP, hash it, store in DB, and return the plain OTP.
@@ -39,14 +40,26 @@ exports.verifyOTP = async (userId, otp, purpose = 'login') => {
 };
 
 /**
- * Send OTP via email (console log in dev, actual email in production).
+ * Send OTP via email.
  */
 exports.sendOTP = async (email, otp, userName) => {
-    // In production, integrate with email service (nodemailer, SES, etc.)
-    // For now, log to console like password reset
-    console.log(`[OTP] To: ${email} | User: ${userName} | OTP: ${otp}`);
-    console.log(`[OTP] Valid for 10 minutes. Do not share with anyone.`);
-    
-    // TODO: Production email integration
-    // await transporter.sendMail({ to: email, subject: 'Your Login OTP', html: `...` });
+    const hospital = process.env.HOSPITAL_NAME || 'LifeLine Hospital';
+    const subject = `Your ${hospital} Login OTP`;
+    const html = emailService.otpHtml(otp, userName);
+
+    const result = await emailService.sendEmail({ to: email, subject, html });
+
+    if (result.simulated) {
+        console.log(`[OTP][SIMULATED] To: ${email} | User: ${userName} | OTP: ${otp}`);
+        console.log(`[OTP] Valid for 10 minutes. Do not share with anyone.`);
+    } else if (result.success) {
+        console.log(`[OTP] Email sent successfully to ${email}`);
+        if (result.previewUrl) {
+            console.log(`[OTP] Preview URL: ${result.previewUrl}`);
+        }
+    } else {
+        console.error(`[OTP] Failed to send email to ${email}:`, result.error);
+    }
+
+    return result;
 };

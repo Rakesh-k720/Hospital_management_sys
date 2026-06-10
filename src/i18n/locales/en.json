@@ -1213,5 +1213,19 @@
     "disable2fa": "Disable two-factor authentication",
     "2faEnabled": "Two-factor authentication enabled",
     "2faDisabled": "Two-factor authentication disabled"
+  },
+  "theme": {
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode"
+  },
+  "export": {
+    "csv": "Export CSV",
+    "pdf": "Export PDF",
+    "download": "Download",
+    "exportAll": "Export All"
+  },
+  "loading": {
+    "pleaseWait": "Please wait...",
+    "loadingData": "Loading data..."
   }
 }

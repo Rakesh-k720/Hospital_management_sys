@@ -1,5 +1,7 @@
 const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
+const emailService = require('../services/emailService');
+const notificationService = require('../services/notificationService');
 
 // Register a new admission (IPD)
 exports.admitPatient = async (req, res) => {
@@ -23,7 +25,32 @@ exports.admitPatient = async (req, res) => {
         // 3. Update bed status
         await connection.execute(`UPDATE beds SET status = 'occupied' WHERE id = ?`, [bed_id]);
 
+        // Get patient details for notifications
+        const [patientInfo] = await connection.execute(
+            `SELECT u.id, u.name, u.email, u.phone, b.ward_name, b.bed_number
+             FROM patients p
+             JOIN users u ON p.user_id = u.id
+             JOIN beds b ON b.id = ?
+             WHERE p.id = ?`,
+            [bed_id, patient_id]
+        );
+
         await connection.commit();
+
+        // Send admission notifications (async, don't block response)
+        if (patientInfo[0]) {
+            const { name, email, phone, ward_name, bed_number } = patientInfo[0];
+
+            // Send SMS
+            notificationService.sendAdmissionAlert({
+                userId: patientInfo[0].id,
+                phone,
+                patientName: name,
+                wardName: ward_name,
+                bedNumber: bed_number
+            }).catch(err => console.error('Admission SMS error:', err.message));
+        }
+
         sendResponse(res, 201, 'Patient admitted successfully');
     } catch (err) {
         await connection.rollback();

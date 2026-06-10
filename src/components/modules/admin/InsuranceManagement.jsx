@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import API from '../../../services/api';
 import { showToast } from '../../../utils/toast';
-import { Shield, Plus, FileText, CheckCircle, XCircle, Clock, DollarSign, Building2, X } from 'lucide-react';
+import { Shield, Plus, FileText, CheckCircle, XCircle, Clock, DollarSign, Building2, X, Download } from 'lucide-react';
+import { exportClaimsToCSV } from '../../../utils/csvExport';
 
 const InsuranceManagement = () => {
     const [tab, setTab] = useState('claims');
@@ -69,7 +70,10 @@ const InsuranceManagement = () => {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><Shield className="text-blue-600" /> Insurance & TPA Management</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2"><Shield className="text-blue-600" /> Insurance & TPA Management</h1>
+                <button onClick={() => exportClaimsToCSV(claims)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700"><Download size={18} /> Export CSV</button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {statCards.map((s, i) => (

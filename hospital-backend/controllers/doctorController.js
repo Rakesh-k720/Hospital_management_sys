@@ -1,6 +1,7 @@
 const Doctor = require('../models/doctorModel');
 const db = require('../config/db');
 const { sendResponse } = require('../utils/responseHandler');
+const notificationService = require('../services/notificationService');
 
 // Get Doctor Dashboard Stats
 exports.getDashboardStats = async (req, res) => {
@@ -112,7 +113,29 @@ exports.createPrescription = async (req, res) => {
             [patient_id, doc[0].id]
         );
 
+        // Get patient info for notification
+        const [patientInfo] = await connection.execute(
+            `SELECT u.id, u.name, u.phone, doc_u.name as doctor_name
+             FROM patients p
+             JOIN users u ON p.user_id = u.id
+             JOIN doctors d ON d.id = ?
+             JOIN users doc_u ON d.user_id = doc_u.id
+             WHERE p.id = ?`,
+            [doc[0].id, patient_id]
+        );
+
         await connection.commit();
+
+        // Send prescription ready notification (async)
+        if (patientInfo[0]) {
+            notificationService.sendPrescriptionReadyAlert({
+                userId: patientInfo[0].id,
+                phone: patientInfo[0].phone,
+                patientName: patientInfo[0].name,
+                doctorName: patientInfo[0].doctor_name
+            }).catch(err => console.error('Prescription SMS error:', err.message));
+        }
+
         sendResponse(res, 201, 'Prescription created successfully', { prescriptionId: prescId });
     } catch (err) {
         await connection.rollback();
